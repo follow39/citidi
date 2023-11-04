@@ -1,5 +1,5 @@
-#ifndef CODISP_INCLUDE_LIB_H
-#define CODISP_INCLUDE_LIB_H
+#ifndef CITIDI_INCLUDE_LIB_H
+#define CITIDI_INCLUDE_LIB_H
 
 #include <tuple>
 
@@ -15,7 +15,7 @@ constexpr size_t find_idx_return(size_t cidx, size_t res, bool matches)
 }
 
 template<size_t Nx>
-constexpr size_t find_idx(const size_t idx, const bool (&matches)[Nx])
+constexpr size_t find_idx(const size_t idx, const std::array<bool, Nx>& matches)
 {
   return idx == Nx
       ? kNotFound
@@ -25,9 +25,9 @@ constexpr size_t find_idx(const size_t idx, const bool (&matches)[Nx])
 template<typename SType, typename... ETypes>
 struct FindExactlyOneChecked
 {
-  static constexpr bool __matches[sizeof...(ETypes)] = {
+  static constexpr std::array<bool, sizeof...(ETypes)> matches = {
       std::is_same<SType, typename ETypes::MarkerTypes>::value...};
-  static constexpr size_t value = find_idx(0, __matches);
+  static constexpr size_t value = find_idx(0, matches);
   static_assert(value != kNotFound, "type not found in type list");
   static_assert(value != kAmbiguous, "type occurs more than once in type list");
 };
@@ -70,4 +70,4 @@ private:
   std::tuple<ElementTypes...> data_;
 };
 
-#endif  // CODISP_INCLUDE_LIB_H
+#endif  // CITIDI_INCLUDE_LIB_H
