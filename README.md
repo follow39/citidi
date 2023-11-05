@@ -1,6 +1,14 @@
 # Description
 
 
+
+# To do
+
+[ ] Marker groups
+[ ] Marker groups combination
+[ ] Orderless markers
+[ ] Lazy construction
+
 # Usage
 
 Basic usage
@@ -14,10 +22,16 @@ disp.Get<MessageProvider, ID{12}>() -> MProvider&
 
 Marker groups
 ```
-disp.Get<Marker1, Marker2, ID{16}>() -> vector<int>& -> disp.Get<MarkerGroup, ID{16}>() -> vector<int>&
+disp.Get<Marker1, Marker2, ID{16}>() -> vector<int>&
+-> disp.Get<MarkerGroup, ID{16}>() -> vector<int>&
 ```
+
 Marker groups combination
+```
 disp.Get<MarkerGroup1, MarkerGroup2, ID{16}>() -> vector<int>&
 ```
 
-Lazy construction?
+Orderless markers
+```
+disp.Get<SensorData, ID{12}>() == disp.Get<ID{12}, SensorData>() 
+```
