@@ -2,6 +2,7 @@
 #define CITIDI_INCLUDE_LIB_H
 
 #include <tuple>
+#include <type_traits>
 
 namespace detail
 {
@@ -46,11 +47,62 @@ struct FindElement : detail::FindExactlyOneChecked<SType, ETypes...>
 {
 };
 
+template<typename... Args1, typename... Args2>
+constexpr auto merge_tuples(const std::tuple<Args1...>&&,
+                            const std::tuple<Args2...>&&)
+{
+  return std::tuple<Args1..., Args2...> {};
+}
+
+template<typename T1, typename T2 = void, typename... Ts>
+struct MergeTuples
+{
+  using T = decltype(merge_tuples(T1 {}, T2 {}));
+  using R = typename MergeTuples<T, Ts...>::R;
+};
+
+template<typename T1>
+struct MergeTuples<T1, void>
+{
+  using R = T1;
+};
+
+struct MarkerGroupBase
+{
+};
+
+template<typename... MTypes>
+struct MarkerGroup : public MarkerGroupBase
+{
+  using MarkerTypes = std::tuple<MTypes...>;
+  static const std::size_t N = sizeof...(MTypes);
+};
+
+template<typename Arg, typename Enable = void>
+struct MakeTuple
+{
+  using T = std::tuple<Arg>;
+};
+
+template<typename Arg>
+struct MakeTuple<
+    Arg,
+    typename std::enable_if<std::is_base_of<MarkerGroupBase, Arg>::value>::type>
+{
+  using T = typename Arg::MarkerTypes;
+};
+
+template<typename... Args>
+struct MergeMarkers
+{
+  using MarkerTypes = typename MergeTuples<typename MakeTuple<Args>::T...>::R;
+};
+
 template<typename DType, typename... MTypes>
 struct Element
 {
   using DataType = DType;
-  using MarkerTypes = std::tuple<MTypes...>;
+  using MarkerTypes = typename MergeMarkers<MTypes...>::MarkerTypes;
 
   DType data;
 };
@@ -59,10 +111,10 @@ template<typename... ElementTypes>
 class Dispatcher
 {
 public:
-  template<typename... MarkerTypes>
+  template<typename... MTypes>
   auto& Get()
   {
-    using SType = std::tuple<MarkerTypes...>;
+    using SType = typename MergeMarkers<MTypes...>::MarkerTypes;
     return std::get<FindElement<SType, ElementTypes...>::value>(this->data_);
   }
 
