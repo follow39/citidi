@@ -4,8 +4,8 @@
 
 # To do
 
-- [ ] Marker groups
-- [ ] Marker groups combination
+- [x] Marker groups
+- [x] Marker groups combination
 - [ ] Orderless markers
 - [ ] Lazy construction
 
