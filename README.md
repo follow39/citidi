@@ -4,10 +4,10 @@
 
 # To do
 
-[ ] Marker groups
-[ ] Marker groups combination
-[ ] Orderless markers
-[ ] Lazy construction
+- [ ] Marker groups
+- [ ] Marker groups combination
+- [ ] Orderless markers
+- [ ] Lazy construction
 
 # Usage
 
