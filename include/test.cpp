@@ -17,9 +17,11 @@ TEST(Dispatcher, SimpleTest)
   const auto& b = disp.Get<double>();
   // const auto& c = d.Get<>();
   auto& d = disp.Get<MG>();
-  d.data = 5;
+  d.data = 1;
   const auto& e = disp.Get<char, int>();
+  d.data = 3;
   const auto& f = disp.Get<int, char>();
+  d.data = 5;
 
   EXPECT_EQ(0, a.data);
   EXPECT_EQ(0.0, b.data);
@@ -30,28 +32,19 @@ TEST(Dispatcher, SimpleTest)
 
 TEST(MergeTuples, SimpleTest)
 {
-  using T = typename MergeTuples<std::tuple<int, float>,
+  using A = typename MergeTuples<std::tuple<int, float>,
                                  std::tuple<std::size_t, double>,
                                  std::tuple<std::vector<int>>>::R;
+  using E = std::tuple<int, float, std::size_t, double, std::vector<int>>;
 
-  // TODO refactor with std::tuple_element_t
-  EXPECT_EQ(typeid(int).name(), typeid(decltype(std::get<0>(T {}))).name());
-  EXPECT_EQ(typeid(float).name(), typeid(decltype(std::get<1>(T {}))).name());
-  EXPECT_EQ(typeid(std::size_t).name(),
-            typeid(decltype(std::get<2>(T {}))).name());
-  EXPECT_EQ(typeid(double).name(), typeid(decltype(std::get<3>(T {}))).name());
-  EXPECT_EQ(typeid(std::vector<int>).name(),
-            typeid(decltype(std::get<4>(T {}))).name());
+  static_assert(std::is_same<E, A>::value, "");
 }
 
 TEST(SortTupleTypes, SimpleTest)
 {
   using T = std::tuple<int, double, std::vector<int>, char>;
-  using R = typename SortTuple<T, DefaultComparator>::R;
+  using A = typename SortTuple<T, DefaultComparator>::R;
+  using E = std::tuple<char, int, double, std::vector<int>>;
 
-  EXPECT_EQ(typeid(char).name(), typeid(std::tuple_element_t<0, R>).name());
-  EXPECT_EQ(typeid(int).name(), typeid(std::tuple_element_t<1, R>).name());
-  EXPECT_EQ(typeid(double).name(), typeid(std::tuple_element_t<2, R>).name());
-  EXPECT_EQ(typeid(std::vector<int>).name(),
-            typeid(std::tuple_element_t<3, R>).name());
+  static_assert(std::is_same<E, A>::value, "");
 }
