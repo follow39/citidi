@@ -32,7 +32,7 @@ TEST(MergeTuples, SimpleTest)
                                  std::tuple<std::size_t, double>,
                                  std::tuple<std::vector<int>>>::R;
 
-  // TODO why is_same does not work?
+  // TODO refactor with std::tuple_element_t
   EXPECT_EQ(typeid(int).name(), typeid(decltype(std::get<0>(T {}))).name());
   EXPECT_EQ(typeid(float).name(), typeid(decltype(std::get<1>(T {}))).name());
   EXPECT_EQ(typeid(std::size_t).name(),
