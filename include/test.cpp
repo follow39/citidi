@@ -6,7 +6,7 @@
 
 TEST(Dispatcher, SimpleTest)
 {
-  using MG = MarkerGroup<float, int>;
+  using MG = MarkerGroup<char, int>;
 
   using DD =
       Dispatcher<Element<int, int>, Element<double, double>, Element<int, MG>>;
@@ -18,12 +18,14 @@ TEST(Dispatcher, SimpleTest)
   // const auto& c = d.Get<>();
   auto& d = disp.Get<MG>();
   d.data = 5;
-  const auto& e = disp.Get<float, int>();
+  const auto& e = disp.Get<char, int>();
+  const auto& f = disp.Get<int, char>();
 
   EXPECT_EQ(0, a.data);
   EXPECT_EQ(0.0, b.data);
   EXPECT_EQ(5, d.data);
   EXPECT_EQ(5, e.data);
+  EXPECT_EQ(5, f.data);
 }
 
 TEST(MergeTuples, SimpleTest)

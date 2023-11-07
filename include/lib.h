@@ -4,6 +4,8 @@
 #include <tuple>
 #include <type_traits>
 
+#include "include/tuple_sort.h"
+
 namespace detail
 {
 
@@ -27,7 +29,9 @@ template<typename SType, typename... ETypes>
 struct FindExactlyOneChecked
 {
   static constexpr std::array<bool, sizeof...(ETypes)> matches = {
-      std::is_same<SType, typename ETypes::MarkerTypes>::value...};
+      std::is_same<SType,
+                   typename SortTuple<typename ETypes::MarkerTypes,
+                                      DefaultComparator>::R>::value...};
   static constexpr size_t value = find_idx(0, matches);
   static_assert(value != kNotFound, "type not found in type list");
   static_assert(value != kAmbiguous, "type occurs more than once in type list");
@@ -104,7 +108,9 @@ template<typename DType, typename... MTypes>
 struct Element
 {
   using DataType = DType;
-  using MarkerTypes = typename MergeMarkers<MTypes...>::MarkerTypes;
+  using MarkerTypes =
+      typename SortTuple<typename MergeMarkers<MTypes...>::MarkerTypes,
+                         DefaultComparator>::R;
 
   DType data;
 };
@@ -116,7 +122,9 @@ public:
   template<typename... MTypes>
   auto& Get()
   {
-    using SType = typename MergeMarkers<MTypes...>::MarkerTypes;
+    using SType =
+        typename SortTuple<typename MergeMarkers<MTypes...>::MarkerTypes,
+                           DefaultComparator>::R;
     return std::get<FindElement<SType, ElementTypes...>::value>(this->data_);
   }
 
