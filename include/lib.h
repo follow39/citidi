@@ -47,17 +47,19 @@ struct FindElement : detail::FindExactlyOneChecked<SType, ETypes...>
 {
 };
 
-template<typename... Args1, typename... Args2>
-constexpr auto merge_tuples(const std::tuple<Args1...>&&,
-                            const std::tuple<Args2...>&&)
-{
-  return std::tuple<Args1..., Args2...> {};
-}
-
 template<typename T1, typename T2 = void, typename... Ts>
 struct MergeTuples
 {
-  using T = decltype(merge_tuples(T1 {}, T2 {}));
+  template<typename TT1, typename TT2>
+  struct MergeTuplesImpl;
+
+  template<typename... Args1, typename... Args2>
+  struct MergeTuplesImpl<std::tuple<Args1...>, std::tuple<Args2...>>
+  {
+    using R = std::tuple<Args1..., Args2...>;
+  };
+
+  using T = typename MergeTuplesImpl<T1, T2>::R;
   using R = typename MergeTuples<T, Ts...>::R;
 };
 
