@@ -1,1 +1,6 @@
 build --cxxopt='-std=c++14'
+build --cxxopt='-fno-rtti'
+build --cxxopt='-Wpedantic'
+build --cxxopt='-Wall'
+build --cxxopt='-Wextra'
+build --cxxopt='-Werror'
