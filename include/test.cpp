@@ -2,6 +2,7 @@
 
 #include "gtest/gtest.h"
 #include "include/lib.h"
+#include "include/tuple_sort.h"
 
 TEST(Dispatcher, SimpleTest)
 {
@@ -39,4 +40,16 @@ TEST(MergeTuples, SimpleTest)
   EXPECT_EQ(typeid(double).name(), typeid(decltype(std::get<3>(T {}))).name());
   EXPECT_EQ(typeid(std::vector<int>).name(),
             typeid(decltype(std::get<4>(T {}))).name());
+}
+
+TEST(SortTupleTypes, SimpleTest)
+{
+  using T = std::tuple<int, double, std::vector<int>, char>;
+  using R = typename SortTuple<T, DefaultComparator>::R;
+
+  EXPECT_EQ(typeid(char).name(), typeid(std::tuple_element_t<0, R>).name());
+  EXPECT_EQ(typeid(int).name(), typeid(std::tuple_element_t<1, R>).name());
+  EXPECT_EQ(typeid(double).name(), typeid(std::tuple_element_t<2, R>).name());
+  EXPECT_EQ(typeid(std::vector<int>).name(),
+            typeid(std::tuple_element_t<3, R>).name());
 }
