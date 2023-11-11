@@ -6,6 +6,49 @@
 
 #include "include/tuple_sort.h"
 
+namespace match
+{
+
+template<typename T>
+constexpr bool find_type_inside_tuple()
+{
+  return false;
+}
+
+template<typename T, typename U, typename... Ts>
+constexpr bool find_type_inside_tuple()
+{
+  return std::is_same<T, U>::value || find_type_inside_tuple<T, Ts...>();
+}
+
+template<typename T1, typename T2, std::size_t m>
+struct MatchTuples
+{
+  template<typename U1, typename U2>
+  struct MatchTuplesImpl
+  {
+    constexpr static std::size_t v = 0;
+  };
+
+  template<typename U, typename... U1s, typename... U2s>
+  struct MatchTuplesImpl<std::tuple<U, U1s...>, std::tuple<U2s...>>
+  {
+    constexpr static std::size_t v = find_type_inside_tuple<U, U2s...>()
+        + MatchTuplesImpl<std::tuple<U1s...>, std::tuple<U2s...>>::v;
+  };
+
+  template<typename... U2s>
+  struct MatchTuplesImpl<void, std::tuple<U2s...>>
+  {
+    constexpr static std::size_t v = 0;
+  };
+
+  constexpr static std::size_t number = MatchTuplesImpl<T1, T2>::v;
+  constexpr static bool match = number >= m;
+};
+
+}  // namespace match
+
 namespace detail
 {
 

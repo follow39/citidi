@@ -48,3 +48,29 @@ TEST(SortTupleTypes, SimpleTest)
 
   static_assert(std::is_same<E, A>::value, "");
 }
+
+TEST(MatchTuples, SimpleTest)
+{
+  {
+    using T1 = std::tuple<int, char>;
+    using T2 = std::tuple<int, double, std::vector<int>, char>;
+    using R = typename match::MatchTuples<T1, T2, 2>;
+
+    const auto number = R::number;
+    const auto match = R::match;
+
+    EXPECT_EQ(number, 2);
+    EXPECT_TRUE(match);
+  }
+  {
+    using T1 = std::tuple<double, int, char>;
+    using T2 = std::tuple<int, double, std::vector<int>, char>;
+    using R = typename match::MatchTuples<T1, T2, 2>;
+
+    const auto number = R::number;
+    const auto match = R::match;
+
+    EXPECT_EQ(number, 3);
+    EXPECT_TRUE(match);
+  }
+}
