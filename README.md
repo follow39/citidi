@@ -6,7 +6,9 @@
 
 - [x] Marker groups
 - [x] Marker groups combination
-- [ ] Orderless markers
+- [x] Orderless markers
+- [ ] Get slice function
+- [ ] View object
 - [ ] Lazy construction
 
 # Usage
@@ -34,4 +36,9 @@ disp.Get<MarkerGroup1, MarkerGroup2, ID{16}>() -> vector<int>&
 Orderless markers
 ```
 disp.Get<SensorData, ID{12}>() == disp.Get<ID{12}, SensorData>() 
+```
+
+Get slice function
+```
+disp.Get<SensorData>() -> tuple<Element<SensorData, ID{12}>&, Element<SensorData, ID{12}>&>
 ```
