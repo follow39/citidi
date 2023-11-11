@@ -4,8 +4,6 @@
 #include <tuple>
 #include <type_traits>
 
-#include "include/tuple_sort.h"
-
 namespace match
 {
 
@@ -21,8 +19,8 @@ constexpr bool find_type_inside_tuple()
   return std::is_same<T, U>::value || find_type_inside_tuple<T, Ts...>();
 }
 
-template<typename T1, typename T2, std::size_t m>
-struct MatchTuples
+template<typename T1, typename T2>
+struct MatchUnorderedTuplesExactly
 {
   template<typename U1, typename U2>
   struct MatchTuplesImpl
@@ -44,7 +42,9 @@ struct MatchTuples
   };
 
   constexpr static std::size_t number = MatchTuplesImpl<T1, T2>::v;
-  constexpr static bool match = number >= m;
+  constexpr static bool match =
+      (std::tuple_size<T1>::value == std::tuple_size<T2>::value)
+      && (std::tuple_size<T1>::value == number);
 };
 
 }  // namespace match
@@ -72,12 +72,11 @@ template<typename SType, typename... ETypes>
 struct FindExactlyOneChecked
 {
   static constexpr std::array<bool, sizeof...(ETypes)> matches = {
-      std::is_same<SType,
-                   typename SortTuple<typename ETypes::MarkerTypes,
-                                      DefaultComparator>::R>::value...};
+      match::MatchUnorderedTuplesExactly<SType, ETypes>::match...};
   static constexpr size_t value = find_idx(0, matches);
   static_assert(value != kNotFound, "type not found in type list");
-  static_assert(value != kAmbiguous, "type occurs more than once in type list");
+  static_assert(value != kAmbiguous,
+                "type occurs more than once in type  list");
 };
 
 template<typename SType>
@@ -151,9 +150,7 @@ template<typename DType, typename... MTypes>
 struct Element
 {
   using DataType = DType;
-  using MarkerTypes =
-      typename SortTuple<typename MergeMarkers<MTypes...>::MarkerTypes,
-                         DefaultComparator>::R;
+  using MarkerTypes = typename MergeMarkers<MTypes...>::MarkerTypes;
 
   DType data;
 };
@@ -165,10 +162,10 @@ public:
   template<typename... MTypes>
   auto& Get()
   {
-    using SType =
-        typename SortTuple<typename MergeMarkers<MTypes...>::MarkerTypes,
-                           DefaultComparator>::R;
-    return std::get<FindElement<SType, ElementTypes...>::value>(this->data_);
+    using SType = typename MergeMarkers<MTypes...>::MarkerTypes;
+    return std::get<
+        FindElement<SType, typename ElementTypes::MarkerTypes...>::value>(
+        this->data_);
   }
 
 private:

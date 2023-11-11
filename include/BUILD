@@ -2,7 +2,6 @@ cc_library(
     name = "lib",
     hdrs = [
         "lib.h",
-        "tuple_sort.h",
     ],
 )
 
