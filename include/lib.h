@@ -133,6 +133,43 @@ struct Slice
   }
 };
 
+template<typename... Types>
+struct FindRepeatedTypes
+{
+  using D = std::tuple<Types...>;
+  constexpr static std::size_t s = std::tuple_size<D>();
+
+  template<std::size_t I, std::size_t J, std::size_t S>
+  struct FindRepeatedTypesImpl
+  {
+    constexpr static bool value =
+        std::is_same<std::tuple_element_t<I, D>,
+                     std::tuple_element_t<J, D>>::value
+        || FindRepeatedTypesImpl<I, J + 1, S>::value;
+  };
+
+  template<std::size_t I, std::size_t S>
+  struct FindRepeatedTypesImpl<I, S, S>
+  {
+    constexpr static bool value = FindRepeatedTypesImpl<I + 1, 0, S>::value;
+  };
+
+  template<std::size_t J, std::size_t S>
+  struct FindRepeatedTypesImpl<S, J, S>
+  {
+    constexpr static bool value = false;
+  };
+
+  constexpr static bool value = FindRepeatedTypesImpl<0, 0, s>::value;
+};
+
+template<typename... Ts>
+struct CheckMarkerTypesForUniqueness
+{
+  constexpr static bool is_uniq = !FindRepeatedTypes<Ts...>::value;
+  static_assert(!is_uniq, "Marker types should be uniq");
+};
+
 namespace detail
 {
 
@@ -233,6 +270,7 @@ struct MergeMarkers
 template<typename DType, typename... MTypes>
 struct Element
 {
+  using Check = CheckMarkerTypesForUniqueness<MTypes...>;
   using DataType = DType;
   using MarkerTypes = typename MergeMarkers<MTypes...>::MarkerTypes;
 
@@ -246,7 +284,7 @@ public:
   template<typename... MTypes>
   auto& Get()
   {
-    // TODO check Mtypes for uniqueness
+    std::ignore = CheckMarkerTypesForUniqueness<MTypes...> {};
     using SType = typename MergeMarkers<MTypes...>::MarkerTypes;
     return std::get<
         FindElement<SType, typename ElementTypes::MarkerTypes...>::value>(
@@ -256,7 +294,7 @@ public:
   template<typename... MTypes>
   auto GetSlice()
   {
-    // TODO check Mtypes for uniqueness
+    std::ignore = CheckMarkerTypesForUniqueness<MTypes...> {};
     using SType = typename MergeMarkers<MTypes...>::MarkerTypes;
     return Slice<std::tuple<ElementTypes...>, SType> {}.Create(data_);
   }
