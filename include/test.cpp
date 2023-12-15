@@ -69,3 +69,18 @@ TEST(MatchTuples, SimpleTest2)
   EXPECT_EQ(number, 4);
   EXPECT_TRUE(match);
 }
+
+// TODO Fix test
+TEST(MatchTuples, DISABLED_SimpleTest3)
+{
+  using T1 =
+      std::tuple<double, std::vector<int>, int, int>;  // int considered 2 times
+  using T2 = std::tuple<int, double, std::vector<int>, char>;
+  using R = typename match::MatchUnorderedTuplesExactly<T1, T2>;
+
+  const auto number = R::number;
+  const auto match = R::match;
+
+  EXPECT_EQ(number, 3);
+  EXPECT_FALSE(match);
+}

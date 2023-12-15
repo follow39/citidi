@@ -162,6 +162,7 @@ public:
   template<typename... MTypes>
   auto& Get()
   {
+    // TODO check Mtypes for uniqueness
     using SType = typename MergeMarkers<MTypes...>::MarkerTypes;
     return std::get<
         FindElement<SType, typename ElementTypes::MarkerTypes...>::value>(
