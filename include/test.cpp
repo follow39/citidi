@@ -70,8 +70,7 @@ TEST(MatchTuples, SimpleTest2)
   EXPECT_TRUE(match);
 }
 
-// TODO Fix test
-TEST(MatchTuples, DISABLED_SimpleTest3)
+TEST(MatchTuples, DISABLED_ShouldNotCompile)
 {
   using T1 =
       std::tuple<double, std::vector<int>, int, int>;  // int considered 2 times
@@ -98,8 +97,7 @@ TEST(FindFirstTupleInsideSecond, SimpleTest)
   EXPECT_TRUE(match);
 }
 
-// TODO Fix test
-TEST(FindFirstTupleInsideSecond, DISABLED_SimpleTest2)
+TEST(FindFirstTupleInsideSecond, DISABLED_ShouldNotCompile)
 {
   using T1 = std::tuple<int, int>;  // int considered 2 times
   using T2 = std::tuple<int, double, std::vector<int>, char>;
