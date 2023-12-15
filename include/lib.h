@@ -19,35 +19,119 @@ constexpr bool find_type_inside_tuple()
   return std::is_same<T, U>::value || find_type_inside_tuple<T, Ts...>();
 }
 
+template<std::size_t N1, std::size_t N2>
+struct Eq
+{
+  static constexpr bool value = (N1 == N2);
+};
+
+template<std::size_t N1, std::size_t N2>
+struct Le
+{
+  static constexpr bool value = (N1 <= N2);
+};
+
 template<typename T1, typename T2>
-struct MatchUnorderedTuplesExactly
+struct CountUnorderedTuples
 {
   template<typename U1, typename U2>
-  struct MatchTuplesImpl
+  struct CountTuplesImpl
   {
     constexpr static std::size_t v = 0;
   };
 
   template<typename U, typename... U1s, typename... U2s>
-  struct MatchTuplesImpl<std::tuple<U, U1s...>, std::tuple<U2s...>>
+  struct CountTuplesImpl<std::tuple<U, U1s...>, std::tuple<U2s...>>
   {
     constexpr static std::size_t v = find_type_inside_tuple<U, U2s...>()
-        + MatchTuplesImpl<std::tuple<U1s...>, std::tuple<U2s...>>::v;
+        + CountTuplesImpl<std::tuple<U1s...>, std::tuple<U2s...>>::v;
   };
 
   template<typename... U2s>
-  struct MatchTuplesImpl<void, std::tuple<U2s...>>
+  struct CountTuplesImpl<void, std::tuple<U2s...>>
   {
     constexpr static std::size_t v = 0;
   };
 
-  constexpr static std::size_t number = MatchTuplesImpl<T1, T2>::v;
+  constexpr static std::size_t value = CountTuplesImpl<T1, T2>::v;
+};
+
+template<typename T1, typename T2>
+struct MatchUnorderedTuplesExactly
+{
+  constexpr static std::size_t number = CountUnorderedTuples<T1, T2>::value;
   constexpr static bool match =
-      (std::tuple_size<T1>::value == std::tuple_size<T2>::value)
-      && (std::tuple_size<T1>::value == number);
+      (Eq<std::tuple_size<T1>::value, std::tuple_size<T2>::value>::value)
+      && (Eq<std::tuple_size<T1>::value, number>::value);
+};
+
+template<typename T1, typename T2>
+struct FindFirstTupleInsideSecond
+{
+  constexpr static std::size_t number = CountUnorderedTuples<T1, T2>::value;
+  constexpr static bool value =
+      (Le<std::tuple_size<T1>::value, std::tuple_size<T2>::value>::value)
+      && (Eq<std::tuple_size<T1>::value, number>::value);
 };
 
 }  // namespace match
+
+template<typename T, typename MTuple>
+struct Slice
+{
+  template<std::size_t I, typename U>
+  struct Cond
+  {
+    constexpr static bool value = match::FindFirstTupleInsideSecond<
+        MTuple,
+        typename std::tuple_element_t<I, U>::MarkerTypes>::value;
+  };
+
+  template<std::size_t I,
+           typename R,
+           std::enable_if_t<Cond<I, T>::value, bool> = true>
+  constexpr auto AddValueCond(T& t, R r)
+  {
+    return std::tuple_cat(
+        r,
+        std::tuple<typename std::add_lvalue_reference<
+            std::tuple_element_t<I, T>>::type> {std::get<I>(t)});
+  }
+
+  template<std::size_t I,
+           typename R,
+           std::enable_if_t<!Cond<I, T>::value, bool> = true>
+  constexpr auto AddValueCond(T&, R r)
+  {
+    return r;
+  }
+
+  template<std::size_t I,
+           std::size_t S,
+           typename R,
+           std::enable_if_t<(I >= S), bool> = true>
+  constexpr auto CreateImpl(T&, R r)
+  {
+    return r;
+  }
+
+  template<std::size_t I,
+           std::size_t S,
+           typename R,
+           std::enable_if_t<(I < S), bool> = true>
+  constexpr auto CreateImpl(T& t, R r)
+  {
+    auto r2 = AddValueCond<I>(t, r);
+
+    return CreateImpl<I + 1, S>(t, r2);
+  }
+
+  constexpr auto Create(T& t)
+  {
+    constexpr std::size_t ss {std::tuple_size<T>()};
+    return CreateImpl<0U, ss>(t, std::tuple<> {});
+  }
+};
 
 namespace detail
 {
@@ -167,6 +251,14 @@ public:
     return std::get<
         FindElement<SType, typename ElementTypes::MarkerTypes...>::value>(
         this->data_);
+  }
+
+  template<typename... MTypes>
+  auto GetSlice()
+  {
+    // TODO check Mtypes for uniqueness
+    using SType = typename MergeMarkers<MTypes...>::MarkerTypes;
+    return Slice<std::tuple<ElementTypes...>, SType> {}.Create(data_);
   }
 
 private:
