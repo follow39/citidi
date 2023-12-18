@@ -124,12 +124,16 @@ TEST(Slice, SimpleTest)
 
   auto t = disp.GetSlice<int>();
 
-  EXPECT_EQ(std::get<0>(t).data, 7);
-  EXPECT_EQ(std::get<1>(t).data, 13);
+  EXPECT_EQ(t.Get<MG>().data, 7);
+  EXPECT_EQ(t.Get<int>().data, 13);
 
   disp.Get<MG>().data = 11;
   disp.Get<int>().data = 14;
 
-  EXPECT_EQ(std::get<0>(t).data, 11);
-  EXPECT_EQ(std::get<1>(t).data, 14);
+  EXPECT_EQ(t.Get<MG>().data, 11);
+  EXPECT_EQ(t.Get<int>().data, 14);
+
+  auto t2 = t.GetSlice<char>();
+
+  EXPECT_EQ(t2.Get<MG>().data, 11);
 }

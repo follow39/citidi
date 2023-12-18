@@ -84,13 +84,14 @@ struct Slice
   {
     constexpr static bool value = match::FindFirstTupleInsideSecond<
         MTuple,
-        typename std::tuple_element_t<I, U>::MarkerTypes>::value;
+        typename std::remove_reference_t<
+            std::tuple_element_t<I, U>>::MarkerTypes>::value;
   };
 
   template<std::size_t I,
            typename R,
            std::enable_if_t<Cond<I, T>::value, bool> = true>
-  constexpr auto AddValueCond(T& t, R r)
+  constexpr static auto AddValueCond(T& t, R r)
   {
     return std::tuple_cat(
         r,
@@ -101,7 +102,7 @@ struct Slice
   template<std::size_t I,
            typename R,
            std::enable_if_t<!Cond<I, T>::value, bool> = true>
-  constexpr auto AddValueCond(T&, R r)
+  constexpr static auto AddValueCond(T&, R r)
   {
     return r;
   }
@@ -110,7 +111,7 @@ struct Slice
            std::size_t S,
            typename R,
            std::enable_if_t<(I >= S), bool> = true>
-  constexpr auto CreateImpl(T&, R r)
+  constexpr static auto CreateImpl(T&, R r)
   {
     return r;
   }
@@ -119,14 +120,14 @@ struct Slice
            std::size_t S,
            typename R,
            std::enable_if_t<(I < S), bool> = true>
-  constexpr auto CreateImpl(T& t, R r)
+  constexpr static auto CreateImpl(T& t, R r)
   {
     auto r2 = AddValueCond<I>(t, r);
 
     return CreateImpl<I + 1, S>(t, r2);
   }
 
-  constexpr auto Create(T& t)
+  constexpr static auto Create(T& t)
   {
     constexpr std::size_t ss {std::tuple_size<T>()};
     return CreateImpl<0U, ss>(t, std::tuple<> {});
@@ -281,13 +282,27 @@ template<typename... ElementTypes>
 class Dispatcher
 {
 public:
+  Dispatcher() = default;
+
+  explicit Dispatcher(std::tuple<ElementTypes...> data)
+      : data_ {data}
+  {
+  }
+
+  template<typename... ETypes>
+  static auto CreateFromTuple(std::tuple<ETypes...> data)
+  {
+    return Dispatcher<ETypes...> {data};
+  }
+
   template<typename... MTypes>
   auto& Get()
   {
     std::ignore = CheckMarkerTypesForUniqueness<MTypes...> {};
     using SType = typename MergeMarkers<MTypes...>::MarkerTypes;
-    return std::get<
-        FindElement<SType, typename ElementTypes::MarkerTypes...>::value>(
+    return std::get<FindElement<
+        SType,
+        typename std::remove_reference_t<ElementTypes>::MarkerTypes...>::value>(
         this->data_);
   }
 
@@ -296,7 +311,8 @@ public:
   {
     std::ignore = CheckMarkerTypesForUniqueness<MTypes...> {};
     using SType = typename MergeMarkers<MTypes...>::MarkerTypes;
-    return Slice<std::tuple<ElementTypes...>, SType> {}.Create(data_);
+    return CreateFromTuple(
+        Slice<std::tuple<ElementTypes...>, SType>::Create(data_));
   }
 
 private:
