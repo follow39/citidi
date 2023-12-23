@@ -76,64 +76,6 @@ struct FindFirstTupleInsideSecond
 
 }  // namespace match
 
-template<typename T, typename MTuple>
-struct Slice
-{
-  template<std::size_t I, typename U>
-  struct Cond
-  {
-    constexpr static bool value = match::FindFirstTupleInsideSecond<
-        MTuple,
-        typename std::remove_reference_t<
-            std::tuple_element_t<I, U>>::MarkerTypes>::value;
-  };
-
-  template<std::size_t I,
-           typename R,
-           std::enable_if_t<Cond<I, T>::value, bool> = true>
-  constexpr static auto AddValueCond(T& t, R r)
-  {
-    return std::tuple_cat(
-        r,
-        std::tuple<typename std::add_lvalue_reference<
-            std::tuple_element_t<I, T>>::type> {std::get<I>(t)});
-  }
-
-  template<std::size_t I,
-           typename R,
-           std::enable_if_t<!Cond<I, T>::value, bool> = true>
-  constexpr static auto AddValueCond(T&, R r)
-  {
-    return r;
-  }
-
-  template<std::size_t I,
-           std::size_t S,
-           typename R,
-           std::enable_if_t<(I >= S), bool> = true>
-  constexpr static auto CreateImpl(T&, R r)
-  {
-    return r;
-  }
-
-  template<std::size_t I,
-           std::size_t S,
-           typename R,
-           std::enable_if_t<(I < S), bool> = true>
-  constexpr static auto CreateImpl(T& t, R r)
-  {
-    auto r2 = AddValueCond<I>(t, r);
-
-    return CreateImpl<I + 1, S>(t, r2);
-  }
-
-  constexpr static auto Create(T& t)
-  {
-    constexpr std::size_t ss {std::tuple_size<T>()};
-    return CreateImpl<0U, ss>(t, std::tuple<> {});
-  }
-};
-
 template<typename... Types>
 struct FindRepeatedTypes
 {
@@ -278,10 +220,126 @@ struct Element
   DType data;
 };
 
+template<typename T, typename... MTypes>
+struct Slice
+{
+  using Check = CheckMarkerTypesForUniqueness<MTypes...>;
+  using MTuple = typename MergeMarkers<MTypes...>::MarkerTypes;
+
+  template<std::size_t I, typename U>
+  struct Cond
+  {
+    constexpr static bool value = match::FindFirstTupleInsideSecond<
+        MTuple,
+        typename std::remove_reference_t<
+            std::tuple_element_t<I, U>>::MarkerTypes>::value;
+  };
+
+  template<std::size_t I,
+           typename R,
+           std::enable_if_t<Cond<I, T>::value, bool> = true>
+  constexpr static auto AddValueCond(T& t, R r)
+  {
+    return std::tuple_cat(
+        std::tuple<typename std::add_lvalue_reference<
+            std::tuple_element_t<I, T>>::type> {std::get<I>(t)},
+        r);
+  }
+
+  template<std::size_t I,
+           typename R,
+           std::enable_if_t<!Cond<I, T>::value, bool> = true>
+  constexpr static auto AddValueCond(T&, R r)
+  {
+    return r;
+  }
+
+  template<std::size_t I,
+           std::size_t S,
+           typename R,
+           std::enable_if_t<(I >= S), bool> = true>
+  constexpr static auto CreateImpl(T&, R r)
+  {
+    return r;
+  }
+
+  template<std::size_t I,
+           std::size_t S,
+           typename R,
+           std::enable_if_t<(I < S), bool> = true>
+  constexpr static auto CreateImpl(T& t, R r)
+  {
+    auto r2 = AddValueCond<I>(t, r);
+
+    return CreateImpl<I + 1, S>(t, r2);
+  }
+
+  constexpr static auto Create(T& t)
+  {
+    constexpr std::size_t ss {std::tuple_size<T>()};
+    return CreateImpl<0U, ss>(t, std::tuple<> {});
+  }
+
+  template<typename TT, typename MM>
+  struct CreateType
+  {
+    template<typename V, typename U>
+    struct Foo
+    {
+    };
+
+    template<typename V, typename... Us>
+    struct Foo<V, std::tuple<Us...>>
+    {
+      using type = std::tuple<V&, Us...>;
+    };
+
+    template<std::size_t I, typename U, typename Enable = void>
+    struct Bar
+    {
+      using type = U;
+    };
+
+    template<std::size_t I, typename U>
+    struct Bar<I, U, typename std::enable_if_t<Cond<I, T>::value>>
+    {
+      using type = typename Foo<std::tuple_element_t<I, T>, U>::type;
+    };
+
+    template<std::size_t I, std::size_t S, typename U>
+    struct CreateTypeImpl
+    {
+      using V = typename Bar<I, U>::type;
+      using type = typename CreateTypeImpl<I + 1, S, V>::type;
+    };
+
+    template<std::size_t S, typename U>
+    struct CreateTypeImpl<S, S, U>
+    {
+      using type = U;
+    };
+
+    using type = typename CreateTypeImpl<0,
+                                         std::tuple_size<TT>::value,
+                                         std::tuple<>>::type;
+  };
+
+  using DType = typename CreateType<T, MTuple>::type;
+
+  Slice(T& t)
+      : data {Create(t)}
+  {
+  }
+
+  DType data;
+};
+
 template<typename... ElementTypes>
 class Dispatcher
 {
 public:
+  using DType = std::tuple<ElementTypes...>;
+
   Dispatcher() = default;
 
   explicit Dispatcher(std::tuple<ElementTypes...> data)
@@ -309,10 +367,14 @@ public:
   template<typename... MTypes>
   auto ShrinkTo()
   {
-    std::ignore = CheckMarkerTypesForUniqueness<MTypes...> {};
-    using SType = typename MergeMarkers<MTypes...>::MarkerTypes;
     return CreateFromTuple(
-        Slice<std::tuple<ElementTypes...>, SType>::Create(data_));
+        Slice<std::tuple<ElementTypes...>, MTypes...>::Create(data_));
+  }
+
+  template<typename... MTypes>
+  operator Slice<DType, MTypes...>()
+  {
+    return Slice<DType, MTypes...> {data_};
   }
 
 private:
