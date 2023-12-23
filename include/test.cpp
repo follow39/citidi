@@ -110,7 +110,7 @@ TEST(FindFirstTupleInsideSecond, DISABLED_ShouldNotCompile)
   EXPECT_FALSE(match);
 }
 
-TEST(Slice, SimpleTest)
+TEST(ShrinkTo, SimpleTest)
 {
   using MG = MarkerGroup<char, int>;
 
@@ -122,7 +122,7 @@ TEST(Slice, SimpleTest)
   disp.Get<MG>().data = 7;
   disp.Get<int>().data = 13;
 
-  auto t = disp.GetSlice<int>();
+  auto t = disp.ShrinkTo<int>();
 
   EXPECT_EQ(t.Get<MG>().data, 7);
   EXPECT_EQ(t.Get<int>().data, 13);
@@ -133,7 +133,7 @@ TEST(Slice, SimpleTest)
   EXPECT_EQ(t.Get<MG>().data, 11);
   EXPECT_EQ(t.Get<int>().data, 14);
 
-  auto t2 = t.GetSlice<char>();
+  auto t2 = t.ShrinkTo<char>();
 
   EXPECT_EQ(t2.Get<MG>().data, 11);
 }

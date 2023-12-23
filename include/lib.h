@@ -307,7 +307,7 @@ public:
   }
 
   template<typename... MTypes>
-  auto GetSlice()
+  auto ShrinkTo()
   {
     std::ignore = CheckMarkerTypesForUniqueness<MTypes...> {};
     using SType = typename MergeMarkers<MTypes...>::MarkerTypes;
