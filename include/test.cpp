@@ -149,14 +149,14 @@ using DD =
 template<typename T>
 void TestCoercionInt(Slice<typename T::DType, int> s)
 {
-  EXPECT_EQ(std::get<0>(s.data).data, 13);
-  EXPECT_EQ(std::get<1>(s.data).data, 7);
+  EXPECT_EQ(s.template Get<MG>().data, 7);
+  EXPECT_EQ(s.template Get<int>().data, 13);
 }
 
 template<typename T>
 void TestCoercionChar(Slice<typename T::DType, char> s)
 {
-  EXPECT_EQ(std::get<0>(s.data).data, 7);
+  EXPECT_EQ(s.template Get<MG>().data, 7);
 }
 
 TEST(Slice, ImplicitCoercionSliceTest)
@@ -169,8 +169,10 @@ TEST(Slice, ImplicitCoercionSliceTest)
   TestCoercionInt<DD>(disp);
 
   auto t = disp.ShrinkTo<int>();
-
   TestCoercionChar<decltype(t)>(t);
+
+  auto s = t.ShrinkTo<char>();
+  TestCoercionChar<decltype(s)>(s);
 }
 
 }  // namespace
