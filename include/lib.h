@@ -400,6 +400,17 @@ public:
   }
 
   template<typename... MTypes>
+  const auto& Get() const
+  {
+    std::ignore = CheckMarkerTypesForUniqueness<MTypes...> {};
+    using SType = typename MergeMarkers<MTypes...>::MarkerTypes;
+    return std::get<FindElement<
+        SType,
+        typename std::remove_reference_t<ElementTypes>::MarkerTypes...>::value>(
+        this->data_);
+  }
+
+  template<typename... MTypes>
   auto ShrinkTo()
   {
     return CreateFromTuple(
