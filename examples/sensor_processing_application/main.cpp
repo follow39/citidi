@@ -160,6 +160,7 @@ using ApplicationDispatcher = Dispatcher<
             CycleTime<k80ms>>,
     Element<ReadSignal<Sensor<kUltrasoundId>, Objects, DataDispatcher>,
             CycleTime<k80ms>>,
+    // 250 ms
     Element<WriteHealth<Sensor<kLidarId>, DataDispatcher>, CycleTime<k250ms>>,
     Element<WriteHealth<Sensor<kUltrasoundId>, DataDispatcher>,
             CycleTime<k250ms>>,
