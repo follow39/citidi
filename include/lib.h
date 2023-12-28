@@ -331,13 +331,13 @@ struct Slice
   {
   }
 
-  template<typename S, typename V, typename... MTs>
+  template<typename S, typename V>
   struct FindIndex
   {
   };
 
-  template<typename S, typename... ETs, typename... MTs>
-  struct FindIndex<S, std::tuple<ETs...>, MTs...>
+  template<typename S, typename... ETs>
+  struct FindIndex<S, std::tuple<ETs...>>
   {
     constexpr static std::size_t value =
         FindElement<S, typename std::remove_reference_t<ETs>::MarkerTypes...>::
@@ -349,7 +349,15 @@ struct Slice
   {
     std::ignore = CheckMarkerTypesForUniqueness<MTs...> {};
     using SType = typename MergeMarkers<MTs...>::MarkerTypes;
-    return std::get<FindIndex<SType, DType, MTs...>::value>(this->data);
+    return std::get<FindIndex<SType, DType>::value>(this->data);
+  }
+
+  template<typename... MTs>
+  const auto& Get() const
+  {
+    std::ignore = CheckMarkerTypesForUniqueness<MTs...> {};
+    using SType = typename MergeMarkers<MTs...>::MarkerTypes;
+    return std::get<FindIndex<SType, DType>::value>(this->data);
   }
 
   template<typename... MTs>
