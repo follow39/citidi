@@ -331,13 +331,13 @@ struct Slice
   {
   }
 
-  template<typename S, typename V, typename... MTs>
+  template<typename S, typename V>
   struct FindIndex
   {
   };
 
-  template<typename S, typename... ETs, typename... MTs>
-  struct FindIndex<S, std::tuple<ETs...>, MTs...>
+  template<typename S, typename... ETs>
+  struct FindIndex<S, std::tuple<ETs...>>
   {
     constexpr static std::size_t value =
         FindElement<S, typename std::remove_reference_t<ETs>::MarkerTypes...>::
@@ -349,7 +349,15 @@ struct Slice
   {
     std::ignore = CheckMarkerTypesForUniqueness<MTs...> {};
     using SType = typename MergeMarkers<MTs...>::MarkerTypes;
-    return std::get<FindIndex<SType, DType, MTs...>::value>(this->data);
+    return std::get<FindIndex<SType, DType>::value>(this->data);
+  }
+
+  template<typename... MTs>
+  const auto& Get() const
+  {
+    std::ignore = CheckMarkerTypesForUniqueness<MTs...> {};
+    using SType = typename MergeMarkers<MTs...>::MarkerTypes;
+    return std::get<FindIndex<SType, DType>::value>(this->data);
   }
 
   template<typename... MTs>
@@ -369,15 +377,15 @@ public:
 
   Dispatcher() = default;
 
-  explicit Dispatcher(std::tuple<ElementTypes...> data)
-      : data_ {data}
+  explicit Dispatcher(std::tuple<ElementTypes...> new_data)
+    : data {new_data}
   {
   }
 
   template<typename... ETypes>
-  static auto CreateFromTuple(std::tuple<ETypes...> data)
+  static auto CreateFromTuple(std::tuple<ETypes...> new_data)
   {
-    return Dispatcher<ETypes...> {data};
+    return Dispatcher<ETypes...> {new_data};
   }
 
   template<typename... MTypes>
@@ -388,24 +396,34 @@ public:
     return std::get<FindElement<
         SType,
         typename std::remove_reference_t<ElementTypes>::MarkerTypes...>::value>(
-        this->data_);
+        this->data);
+  }
+
+  template<typename... MTypes>
+  const auto& Get() const
+  {
+    std::ignore = CheckMarkerTypesForUniqueness<MTypes...> {};
+    using SType = typename MergeMarkers<MTypes...>::MarkerTypes;
+    return std::get<FindElement<
+        SType,
+        typename std::remove_reference_t<ElementTypes>::MarkerTypes...>::value>(
+        this->data);
   }
 
   template<typename... MTypes>
   auto ShrinkTo()
   {
     return CreateFromTuple(
-        Slice<std::tuple<ElementTypes...>, MTypes...>::Create(data_));
+        Slice<std::tuple<ElementTypes...>, MTypes...>::Create(data));
   }
 
   template<typename... MTypes>
   operator Slice<DType, MTypes...>()
   {
-    return Slice<DType, MTypes...> {data_};
+    return Slice<DType, MTypes...> {data};
   }
 
-private:
-  std::tuple<ElementTypes...> data_;
+  std::tuple<ElementTypes...> data;
 };
 
 #endif  // CITIDI_INCLUDE_LIB_H
