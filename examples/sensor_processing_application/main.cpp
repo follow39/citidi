@@ -53,11 +53,11 @@ struct Objects
 constexpr static std::size_t kLidarId {0U};
 constexpr static std::size_t kUltrasoundId {1U};
 
-template<std::size_t CycleTimeValue>
+template<std::size_t CycleTimeValueMs>
 struct CycleTime
 {
-  constexpr static std::size_t value = CycleTimeValue;
-  constexpr static std::size_t Value() { return CycleTimeValue; }
+  constexpr static std::size_t value_ms = CycleTimeValueMs;
+  constexpr static std::size_t ValueMs() { return value_ms; }
 };
 
 constexpr static std::size_t k40ms {40U};
@@ -134,7 +134,7 @@ struct ApplicationProcess
             auto& task = std::get<i.value>(tasks.data);
             task.data(args...);
           });
-      std::this_thread::sleep_for(std::chrono::milliseconds {CTime::Value()});
+      std::this_thread::sleep_for(std::chrono::milliseconds {CTime::ValueMs()});
     }
   }
 };
