@@ -360,6 +360,20 @@ struct Slice
     return std::get<FindIndex<SType, DType>::value>(this->data);
   }
 
+  auto& GetSingle()
+  {
+    static_assert(1 == std::tuple_size<DType>::value,
+                  "There is more than 1 value");
+    return std::get<0>(data);
+  }
+
+  const auto& GetSingle() const
+  {
+    static_assert(1 == std::tuple_size<DType>::value,
+                  "There is more than 1 value");
+    return std::get<0>(data);
+  }
+
   template<typename... MTs>
   auto ShrinkTo()
   {
