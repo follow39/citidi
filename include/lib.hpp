@@ -4,20 +4,10 @@
 #include <tuple>
 #include <type_traits>
 
+#include "include/utils.hpp"
+
 namespace match
 {
-
-template<typename T>
-constexpr bool find_type_inside_tuple()
-{
-  return false;
-}
-
-template<typename T, typename U, typename... Ts>
-constexpr bool find_type_inside_tuple()
-{
-  return std::is_same<T, U>::value || find_type_inside_tuple<T, Ts...>();
-}
 
 template<std::size_t N1, std::size_t N2>
 struct Eq
@@ -32,34 +22,10 @@ struct Le
 };
 
 template<typename T1, typename T2>
-struct CountUnorderedTuples
-{
-  template<typename U1, typename U2>
-  struct CountTuplesImpl
-  {
-    constexpr static std::size_t v = 0;
-  };
-
-  template<typename U, typename... U1s, typename... U2s>
-  struct CountTuplesImpl<std::tuple<U, U1s...>, std::tuple<U2s...>>
-  {
-    constexpr static std::size_t v = find_type_inside_tuple<U, U2s...>()
-        + CountTuplesImpl<std::tuple<U1s...>, std::tuple<U2s...>>::v;
-  };
-
-  template<typename... U2s>
-  struct CountTuplesImpl<void, std::tuple<U2s...>>
-  {
-    constexpr static std::size_t v = 0;
-  };
-
-  constexpr static std::size_t value = CountTuplesImpl<T1, T2>::v;
-};
-
-template<typename T1, typename T2>
 struct MatchUnorderedTuplesExactly
 {
-  constexpr static std::size_t number = CountUnorderedTuples<T1, T2>::value;
+  constexpr static std::size_t number =
+      CountTheSameTypesInUnorderedTuples<T1, T2>::value;
   constexpr static bool match =
       (Eq<std::tuple_size<T1>::value, std::tuple_size<T2>::value>::value)
       && (Eq<std::tuple_size<T1>::value, number>::value);
@@ -68,7 +34,8 @@ struct MatchUnorderedTuplesExactly
 template<typename T1, typename T2>
 struct FindFirstTupleInsideSecond
 {
-  constexpr static std::size_t number = CountUnorderedTuples<T1, T2>::value;
+  constexpr static std::size_t number =
+      CountTheSameTypesInUnorderedTuples<T1, T2>::value;
   constexpr static bool value =
       (Le<std::tuple_size<T1>::value, std::tuple_size<T2>::value>::value)
       && (Eq<std::tuple_size<T1>::value, number>::value);
