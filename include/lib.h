@@ -378,7 +378,7 @@ public:
   Dispatcher() = default;
 
   explicit Dispatcher(std::tuple<ElementTypes...> new_data)
-    : data {new_data}
+      : data {new_data}
   {
   }
 
