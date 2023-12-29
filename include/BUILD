@@ -4,6 +4,18 @@ cc_library(
         "lib.h",
     ],
     visibility = ["//visibility:public"],
+    deps = [
+        ":utils",
+        "@gtest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "utils",
+    hdrs = [
+        "utils.hpp",
+    ],
+    visibility = ["//visibility:public"],
 )
 
 cc_test(
