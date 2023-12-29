@@ -1,7 +1,7 @@
 cc_library(
     name = "lib",
     hdrs = [
-        "lib.h",
+        "lib.hpp",
     ],
     visibility = ["//visibility:public"],
     deps = [

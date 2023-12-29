@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "gtest/gtest.h"
-#include "include/lib.h"
+#include "include/lib.hpp"
 
 TEST(Dispatcher, SimpleTest)
 {
