@@ -70,7 +70,7 @@ struct ReadSignal
 {
   void operator()(Slice<typename T::DType, SensorType, SignalType> disp)
   {
-    disp.template Get<SensorType, SignalType>().data.value++;
+    disp.GetSingle().data.value++;
   }
 };
 
