@@ -5,10 +5,10 @@
 #include <type_traits>
 
 template<typename SearchType, typename... PackTypes>
-struct FindTypeInsidePack
+struct IsTypeInsidePack
 {
   template<typename SType, typename PType>
-  constexpr static bool FindTypeInsidePackImpl()
+  constexpr static bool IsTypeInsidePackImpl()
   {
     return std::is_same<SType, PType>::value;
   }
@@ -17,33 +17,32 @@ struct FindTypeInsidePack
            typename PType,
            typename PTypeNext,
            typename... PTypes>
-  constexpr static bool FindTypeInsidePackImpl()
+  constexpr static bool IsTypeInsidePackImpl()
   {
     return std::is_same<SType, PType>::value
-        || FindTypeInsidePackImpl<SType, PTypeNext, PTypes...>();
+        || IsTypeInsidePackImpl<SType, PTypeNext, PTypes...>();
   }
 
   constexpr static bool value =
-      FindTypeInsidePackImpl<SearchType, PackTypes...>();
+      IsTypeInsidePackImpl<SearchType, PackTypes...>();
 };
 
 template<typename SearchType, typename TupleType>
-struct FindTypeInsideTuple
+struct IsTypeInsideTuple
 {
   template<typename SType, typename TType>
-  struct FindTypeInsideTupleImpl
+  struct IsTypeInsideTupleImpl
   {
   };
 
   template<typename SType, typename... Ts>
-  struct FindTypeInsideTupleImpl<SType, std::tuple<Ts...>>
+  struct IsTypeInsideTupleImpl<SType, std::tuple<Ts...>>
   {
-    constexpr static std::size_t value =
-        FindTypeInsidePack<SType, Ts...>::value;
+    constexpr static std::size_t value = IsTypeInsidePack<SType, Ts...>::value;
   };
 
   constexpr static bool value =
-      FindTypeInsideTupleImpl<SearchType, TupleType>::value;
+      IsTypeInsideTupleImpl<SearchType, TupleType>::value;
 };
 
 template<typename TupleType1, typename TupleType2>
@@ -54,7 +53,7 @@ struct CountTheSameTypesInUnorderedTuples
   {
     constexpr static std::size_t value =
         static_cast<std::size_t>(
-            FindTypeInsideTuple<std::tuple_element_t<I, TType1>, TType2>::value)
+            IsTypeInsideTuple<std::tuple_element_t<I, TType1>, TType2>::value)
         + CountTuplesImpl<I + 1, S, TType1, TType2>::value;
   };
 
