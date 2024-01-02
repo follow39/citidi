@@ -7,15 +7,20 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
+  ubuntu-and-mac:
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        compiler: [gcc, clang]
+    name: ${{matrix.os}}:${{matrix.compiler}}
     steps:
     - uses: actions/checkout@v3
 
     - name: Build
-      run: bazel build //...:all
+      run: |
+        CC=${{matrix.compiler}} bazel build --verbose_failures //...:all
 
     - name: Test
-      run: bazel test //...:all
-
+      run: |
+        CC=${{matrix.compiler}} bazel test //...:all
