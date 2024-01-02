@@ -1,6 +1,7 @@
 #ifndef CITIDI_INCLUDE_LIB_H
 #define CITIDI_INCLUDE_LIB_H
 
+#include <array>
 #include <tuple>
 #include <type_traits>
 
