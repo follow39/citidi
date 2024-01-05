@@ -2,7 +2,9 @@
 #include <iostream>
 #include <thread>
 
-#include "include/lib.hpp"
+#include "include/dispatcher.hpp"
+#include "include/element.hpp"
+#include "include/slice.hpp"
 
 struct LidarObjectsData
 {
