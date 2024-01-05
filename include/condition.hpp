@@ -2,7 +2,6 @@
 #define CITIDI_INCLUDE_CONDITION_H
 
 #include <tuple>
-#include <type_traits>
 
 #include "include/utils.hpp"
 
