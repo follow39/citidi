@@ -5,83 +5,85 @@
 namespace
 {
 
-template<bool Result>
-struct TestOperation
+TEST(BoolConst, EvaluateTest)
 {
-  template<typename T>
-  constexpr static bool Evaluate()
   {
-    return Result;
+    using Condition = BoolConst<true>;
+    EXPECT_TRUE(Condition::Evaluate<void>());
   }
-};
+  {
+    using Condition = BoolConst<false>;
+    EXPECT_FALSE(Condition::Evaluate<void>());
+  }
+}
 
-TEST(Slice, OrConditionTest)
+TEST(Or, EvaluateTest)
 {
   {
-    using Condition = Or<TestOperation<true>, TestOperation<true>>;
+    using Condition = Or<BoolConst<true>, BoolConst<true>>;
     EXPECT_TRUE(Condition::Evaluate<int>());
   }
   {
-    using Condition = Or<TestOperation<true>, TestOperation<false>>;
+    using Condition = Or<BoolConst<true>, BoolConst<false>>;
     EXPECT_TRUE(Condition::Evaluate<int>());
   }
   {
-    using Condition = Or<TestOperation<false>, TestOperation<true>>;
+    using Condition = Or<BoolConst<false>, BoolConst<true>>;
     EXPECT_TRUE(Condition::Evaluate<int>());
   }
   {
-    using Condition = Or<TestOperation<false>, TestOperation<false>>;
+    using Condition = Or<BoolConst<false>, BoolConst<false>>;
     EXPECT_FALSE(Condition::Evaluate<int>());
   }
   {
-    using Condition = Or<TestOperation<false>,
-                         TestOperation<false>,
-                         TestOperation<true>,
-                         TestOperation<false>>;
+    using Condition = Or<BoolConst<false>,
+                         BoolConst<false>,
+                         BoolConst<true>,
+                         BoolConst<false>>;
     EXPECT_TRUE(Condition::Evaluate<int>());
   }
 }
 
-TEST(Slice, AndConditionTest)
+TEST(And, EvaluateTest)
 {
   {
-    using Condition = And<TestOperation<true>, TestOperation<true>>;
+    using Condition = And<BoolConst<true>, BoolConst<true>>;
     EXPECT_TRUE(Condition::Evaluate<int>());
   }
   {
-    using Condition = And<TestOperation<true>, TestOperation<false>>;
+    using Condition = And<BoolConst<true>, BoolConst<false>>;
     EXPECT_FALSE(Condition::Evaluate<int>());
   }
   {
-    using Condition = And<TestOperation<false>, TestOperation<true>>;
+    using Condition = And<BoolConst<false>, BoolConst<true>>;
     EXPECT_FALSE(Condition::Evaluate<int>());
   }
   {
-    using Condition = And<TestOperation<false>, TestOperation<false>>;
+    using Condition = And<BoolConst<false>, BoolConst<false>>;
     EXPECT_FALSE(Condition::Evaluate<int>());
   }
   {
-    using Condition = And<TestOperation<true>,
-                          TestOperation<true>,
-                          TestOperation<false>,
-                          TestOperation<true>>;
+    using Condition = And<BoolConst<true>,
+                          BoolConst<true>,
+                          BoolConst<false>,
+                          BoolConst<true>>;
     EXPECT_FALSE(Condition::Evaluate<int>());
   }
 }
 
-TEST(Slice, NotConditionTest)
+TEST(Not, EvaluateTest)
 {
   {
-    using Condition = Not<TestOperation<true>>;
+    using Condition = Not<BoolConst<true>>;
     EXPECT_FALSE(Condition::Evaluate<void>());
   }
   {
-    using Condition = Not<TestOperation<false>>;
+    using Condition = Not<BoolConst<false>>;
     EXPECT_TRUE(Condition::Evaluate<void>());
   }
 }
 
-TEST(Slice, WithConditionTest)
+TEST(With, EvaluateTest)
 {
   using TestTuple = std::tuple<int, float>;
   {
@@ -111,7 +113,37 @@ TEST(Slice, WithConditionTest)
   }
 }
 
-TEST(Slice, WithoutConditionTest)
+TEST(WithExactly, EvaluateTest)
+{
+  using TestTuple = std::tuple<int, float>;
+  {
+    using Condition = WithExactly<int>;
+    const bool r = Condition::Evaluate<TestTuple>();
+    EXPECT_FALSE(r);
+  }
+  {
+    using Condition = WithExactly<float>;
+    const bool r = Condition::Evaluate<TestTuple>();
+    EXPECT_FALSE(r);
+  }
+  {
+    using Condition = WithExactly<float, int>;
+    const bool r = Condition::Evaluate<TestTuple>();
+    EXPECT_TRUE(r);
+  }
+  {
+    using Condition = WithExactly<int, float>;
+    const bool r = Condition::Evaluate<TestTuple>();
+    EXPECT_TRUE(r);
+  }
+  {
+    using Condition = WithExactly<char>;
+    const bool r = Condition::Evaluate<TestTuple>();
+    EXPECT_FALSE(r);
+  }
+}
+
+TEST(Without, EvaluateTest)
 {
   using TestTuple = std::tuple<int, float>;
   {
@@ -141,26 +173,29 @@ TEST(Slice, WithoutConditionTest)
   }
 }
 
-TEST(Slice, ComplexConditionTest)
+TEST(ComplexCondition, Test)
 {
-  using ConditionEvaluatorType = ConditionEvaluator<
-      Or<With<int>, With<float>, And<With<bool>, Without<char, double>>>>;
+  using ConditionType =
+      Or<With<int>, With<float>, And<With<bool>, Without<char, double>>>;
 
   {
-    const bool r = ConditionEvaluatorType::Evaluate<std::tuple<int, float>>();
-    EXPECT_TRUE(r);
-  }
-  {
-    const bool r = ConditionEvaluatorType::Evaluate<std::tuple<bool, float>>();
-    EXPECT_TRUE(r);
-  }
-  {
-    const bool r = ConditionEvaluatorType::Evaluate<std::tuple<bool, double>>();
+    const bool r =
+        ConditionEvaluator<std::tuple<int, float>, ConditionType>::value;
     EXPECT_TRUE(r);
   }
   {
     const bool r =
-        ConditionEvaluatorType::Evaluate<std::tuple<bool, double, char>>();
+        ConditionEvaluator<std::tuple<bool, float>, ConditionType>::value;
+    EXPECT_TRUE(r);
+  }
+  {
+    const bool r =
+        ConditionEvaluator<std::tuple<bool, double>, ConditionType>::value;
+    EXPECT_TRUE(r);
+  }
+  {
+    const bool r = ConditionEvaluator<std::tuple<bool, double, char>,
+                                      ConditionType>::value;
     EXPECT_FALSE(r);
   }
 }

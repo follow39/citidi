@@ -5,6 +5,16 @@
 
 #include "include/utils.hpp"
 
+template<bool Value>
+struct BoolConst
+{
+  template<typename T>
+  constexpr static bool Evaluate()
+  {
+    return Value;
+  }
+};
+
 template<typename... OperationTypes>
 struct Or
 {
@@ -70,6 +80,8 @@ struct Not
 template<typename... MarkerTypes>
 struct With
 {
+  using Check = CheckMarkerTypesForUniqueness<MarkerTypes...>;
+
   template<typename T1, typename T2>
   constexpr static bool EvaluateImpl()
   {
@@ -84,25 +96,44 @@ struct With
   }
 };
 
+template<typename... MarkerTypes>
+struct WithExactly
+{
+  using Check = CheckMarkerTypesForUniqueness<MarkerTypes...>;
+
+  template<typename T1, typename T2>
+  constexpr static bool EvaluateImpl()
+  {
+    return (std::tuple_size<T1>::value == std::tuple_size<T2>::value)
+        && (std::tuple_size<T1>::value
+            == CountTheSameTypesInUnorderedTuples<T1, T2>::value);
+  }
+
+  template<typename MarkersTupleType>
+  constexpr static bool Evaluate()
+  {
+    return EvaluateImpl<std::tuple<MarkerTypes...>, MarkersTupleType>();
+  }
+};
+
 // Without works as AND condition internaly
 template<typename... MarkerTypes>
 struct Without
 {
+  using Check = CheckMarkerTypesForUniqueness<MarkerTypes...>;
+
   template<typename MarkersTupleType>
   constexpr static bool Evaluate()
   {
-    return !(With<MarkerTypes...>::template Evaluate<MarkersTupleType>());
+    return Not<With<MarkerTypes...>>::template Evaluate<MarkersTupleType>();
   }
 };
 
-template<typename Condition>
+template<typename MarkersTupleType, typename Condition>
 struct ConditionEvaluator
 {
-  template<typename MarkersTupleType>
-  constexpr static bool Evaluate()
-  {
-    return Condition::template Evaluate<MarkersTupleType>();
-  }
+  constexpr static bool value =
+      Condition::template Evaluate<MarkersTupleType>();
 };
 
 #endif  // CITIDI_INCLUDE_CONDITION_H
