@@ -3,12 +3,21 @@
 
 #include "include/utils.hpp"
 
-template<typename DType, typename... MTypes>
+template<typename DType, typename... MarkerTypes>
 struct Element
 {
-  using Check = CheckMarkerTypesForUniqueness<MTypes...>;
+  using Check = CheckMarkerTypesForUniqueness<MarkerTypes...>;
   using DataType = DType;
-  using MarkerTypes = typename MergeMarkers<MTypes...>::MarkerTypes;
+  using MarkerTypesTupleType = std::tuple<MarkerTypes...>;
+
+  Element() = default;
+
+  Element(const Element<DType, MarkerTypes...>&) = delete;
+  Element(Element<DType, MarkerTypes...>&&) = delete;
+  Element<DType, MarkerTypes...> operator=(
+      const Element<DType, MarkerTypes...>&) = delete;
+  Element<DType, MarkerTypes...> operator=(Element<DType, MarkerTypes...>&&) =
+      delete;
 
   DType data;
 };

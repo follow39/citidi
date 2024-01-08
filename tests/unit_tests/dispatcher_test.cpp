@@ -1,97 +1,70 @@
 #include "include/dispatcher.hpp"
+#include "include/condition.hpp"
 #include "include/element.hpp"
+#include "include/slice.hpp"
 
 #include "gtest/gtest.h"
 
 namespace
 {
 
-using MG = MarkerGroup<char, int>;
-using MG2 = MarkerGroup<double>;
-
-using DD =
-    Dispatcher<Element<int, MG>, Element<int, int>, Element<double, double>>;
+using DD = Dispatcher<Element<int, char, int>,
+                      Element<int, int>,
+                      Element<double, double>>;
 
 TEST(Dispatcher, SimpleTest)
 {
   DD disp {};
 
-  auto& a = disp.Get<int>();
+  auto& a = disp.Get<And<WithExactly<int>>>().Single();
   a.data = 123;
-  auto& b = disp.Get<double>();
+  auto& b = disp.Get<With<double>>().Single();
   b.data = 12.34;
-  // const auto& c = disp.Get<>();
-  auto& d = disp.Get<MG>();
-  d.data = 1;
-  const auto& e = disp.Get<char, int>();
-  d.data = 3;
-  const auto& f = disp.Get<int, char>();
-  d.data = 5;
-  const auto& g = disp.Get<MG2>();
+  auto& c = disp.Get<With<char>>().Single();
+  c.data = 'A';
 
   EXPECT_EQ(123, a.data);
   EXPECT_EQ(12.34, b.data);
-  EXPECT_EQ(5, d.data);
-  EXPECT_EQ(5, e.data);
-  EXPECT_EQ(5, f.data);
-  EXPECT_EQ(12.34, g.data);
-}
-
-TEST(ShrinkTo, SimpleTest)
-{
-  using MG = MarkerGroup<char, int>;
-
-  using DD =
-      Dispatcher<Element<int, MG>, Element<int, int>, Element<double, double>>;
-
-  DD disp {};
-
-  disp.Get<MG>().data = 7;
-  disp.Get<int>().data = 13;
-
-  auto t = disp.ShrinkTo<int>();
-
-  EXPECT_EQ(t.Get<MG>().data, 7);
-  EXPECT_EQ(t.Get<int>().data, 13);
-
-  disp.Get<MG>().data = 11;
-  disp.Get<int>().data = 14;
-
-  EXPECT_EQ(t.Get<MG>().data, 11);
-  EXPECT_EQ(t.Get<int>().data, 14);
-
-  auto t2 = t.ShrinkTo<char>();
-
-  EXPECT_EQ(t2.Get<MG>().data, 11);
+  EXPECT_EQ('A', c.data);
 }
 
 template<typename T>
-void TestCoercionInt(Slice<typename T::DType, int> s)
+void TestCoercionInt(Slice<T, With<int>> s)
 {
-  EXPECT_EQ(s.template Get<MG>().data, 7);
-  EXPECT_EQ(s.template Get<int>().data, 13);
+  EXPECT_EQ(s.template Get<With<char>>().Single().data, 7);
+  EXPECT_EQ(s.template Get<0>().data, 7);
+  EXPECT_EQ(s.template Get<WithExactly<int>>().Single().data, 13);
+  EXPECT_EQ(s.template Get<1>().data, 13);
 }
 
 template<typename T>
-void TestCoercionChar(Slice<typename T::DType, char> s)
+void TestCoercionChar(Slice<T, With<char>> s)
 {
-  EXPECT_EQ(s.template Get<MG>().data, 7);
+  EXPECT_EQ(s.template Get<0>().data, 7);
+  EXPECT_EQ(s.Single().data, 7);
 }
 
-TEST(Slice, ImplicitCoercionSliceTest)
+template<typename T>
+void TestCoercionDouble(const Slice<T, WithExactly<double>>& s)
+{
+  EXPECT_DOUBLE_EQ(s.template Get<0>().data, 12.34);
+  EXPECT_DOUBLE_EQ(s.Single().data, 12.34);
+}
+
+TEST(Dispatcher, ImplicitCoercionSliceTest)
 {
   DD disp {};
 
-  disp.Get<MG>().data = 7;
-  disp.Get<int>().data = 13;
+  disp.Get<With<char>>().Single().data = 7;
+  disp.Get<WithExactly<int>>().Single().data = 13;
+  disp.Get<With<double>>().Single().data = 12.34;
 
   TestCoercionInt<DD>(disp);
+  TestCoercionChar<DD>(disp);
+  TestCoercionDouble<DD>(disp);
 
-  auto t = disp.ShrinkTo<int>();
-  TestCoercionChar<decltype(t)>(t);
-
-  auto s = t.ShrinkTo<char>();
-  TestCoercionChar<decltype(s)>(s);
+  auto t = disp.Get<With<double>>();
+  TestCoercionDouble<decltype(t)>(t);
 }
 
 }  // namespace

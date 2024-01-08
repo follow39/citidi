@@ -4,169 +4,172 @@
 #include <tuple>
 #include <type_traits>
 
+#include "include/condition.hpp"
 #include "include/utils.hpp"
 
-template<typename T, typename... MTypes>
-struct Slice
+template<typename BType, typename Cond>
+class Slice;
+
+namespace
 {
-  using Check = CheckMarkerTypesForUniqueness<MTypes...>;
-  using MTuple = typename MergeMarkers<MTypes...>::MarkerTypes;
 
-  template<std::size_t I, typename U>
-  struct Cond
+struct ArrayMaker
+{
+  template<std::size_t I, std::size_t J>
+  struct Eq
   {
-    constexpr static bool value = match::FindFirstTupleInsideSecond<
-        MTuple,
-        typename std::remove_reference_t<
-            std::tuple_element_t<I, U>>::MarkerTypes>::value;
+    constexpr static bool value = I == J;
   };
 
-  template<std::size_t I,
-           typename R,
-           std::enable_if_t<Cond<I, T>::value, bool> = true>
-  constexpr static auto AddValueCond(T& t, R r)
+  template<
+      std::size_t AI,
+      std::size_t AS,
+      std::size_t DI,
+      std::size_t DS,
+      typename D,
+      typename C,
+      std::enable_if_t<
+          !(C::template Evaluate<
+              typename std::tuple_element_t<DI, D>::MarkerTypesTupleType>()),
+          bool> = true>
+  constexpr static void MakeImpl(std::array<std::size_t, AS>& arr)
   {
-    return std::tuple_cat(
-        std::tuple<typename std::add_lvalue_reference<
-            std::tuple_element_t<I, T>>::type> {std::get<I>(t)},
-        r);
+    Make<AI, AS, DI + 1, DS, D, C>(arr);
   }
 
-  template<std::size_t I,
-           typename R,
-           std::enable_if_t<!Cond<I, T>::value, bool> = true>
-  constexpr static auto AddValueCond(T&, R r)
+  template<
+      std::size_t AI,
+      std::size_t AS,
+      std::size_t DI,
+      std::size_t DS,
+      typename D,
+      typename C,
+      std::enable_if_t<
+          (C::template Evaluate<
+              typename std::tuple_element_t<DI, D>::MarkerTypesTupleType>()),
+          bool> = true>
+  constexpr static void MakeImpl(std::array<std::size_t, AS>& arr)
   {
-    return r;
+    std::get<AI>(arr) = DI;
+    Make<AI + 1, AS, DI + 1, DS, D, C>(arr);
   }
 
-  template<std::size_t I,
-           std::size_t S,
-           typename R,
-           std::enable_if_t<(I >= S), bool> = true>
-  constexpr static auto CreateImpl(T&, R r)
+  template<
+      std::size_t AI,
+      std::size_t AS,
+      std::size_t DI,
+      std::size_t DS,
+      typename D,
+      typename C,
+      std::enable_if_t<!(Eq<AI, AS>::value || Eq<DI, DS>::value), bool> = true>
+  constexpr static void Make(std::array<std::size_t, AS>& arr)
   {
-    return r;
+    MakeImpl<AI, AS, DI, DS, D, C>(arr);
   }
 
-  template<std::size_t I,
-           std::size_t S,
-           typename R,
-           std::enable_if_t<(I < S), bool> = true>
-  constexpr static auto CreateImpl(T& t, R r)
+  template<
+      std::size_t AI,
+      std::size_t AS,
+      std::size_t DI,
+      std::size_t DS,
+      typename D,
+      typename C,
+      std::enable_if_t<(Eq<AI, AS>::value || Eq<DI, DS>::value), bool> = true>
+  constexpr static void Make(std::array<std::size_t, AS>&)
   {
-    auto r2 = AddValueCond<I>(t, r);
-
-    return CreateImpl<I + 1, S>(t, r2);
   }
+};
 
-  constexpr static auto Create(T& t)
-  {
-    constexpr std::size_t ss {std::tuple_size<T>()};
-    return CreateImpl<0U, ss>(t, std::tuple<> {});
-  }
+template<typename D, typename C, std::size_t ArraySize>
+constexpr static std::array<std::size_t, ArraySize> MakeArray()
+{
+  std::array<std::size_t, ArraySize> arr {};
+  ArrayMaker::template Make<0, ArraySize, 0, std::tuple_size<D>::value, D, C>(
+      arr);
+  return arr;
+};
 
-  template<typename TT, typename MM>
-  struct CreateType
-  {
-    template<typename V, typename U>
-    struct Foo
-    {
-    };
+template<typename BT, typename C>
+struct MakeConditionType
+{
+  using Condition = C;
+};
 
-    template<typename V, typename... Us>
-    struct Foo<V, std::tuple<Us...>>
-    {
-      using type = std::tuple<V&, Us...>;
-    };
+template<typename BT, typename COld, typename CNew>
+struct MakeConditionType<Slice<BT, COld>, CNew>
+{
+  using Condition = And<COld, CNew>;
+};
 
-    template<std::size_t I, typename U, typename Enable = void>
-    struct Bar
-    {
-      using type = U;
-    };
+}  // namespace
 
-    template<std::size_t I, typename U>
-    struct Bar<I, U, typename std::enable_if_t<Cond<I, T>::value>>
-    {
-      using type = typename Foo<std::tuple_element_t<I, T>, U>::type;
-    };
+template<typename BType, typename Cond>
+class Slice
+{
+public:
+  using DType = typename BType::DType;
+  using Condition = typename MakeConditionType<BType, Cond>::Condition;
 
-    template<std::size_t I, std::size_t S, typename U>
-    struct CreateTypeImpl
-    {
-      using V = typename Bar<I, U>::type;
-      using type = typename CreateTypeImpl<I + 1, S, V>::type;
-    };
-
-    template<std::size_t S, typename U>
-    struct CreateTypeImpl<S, S, U>
-    {
-      using type = U;
-    };
-
-    using type = typename CreateTypeImpl<0,
-                                         std::tuple_size<TT>::value,
-                                         std::tuple<>>::type;
-  };
-
-  using DType = typename CreateType<T, MTuple>::type;
-
-  Slice(T& t)
-      : data {Create(t)}
+  Slice(DType& t)
+      : base_data {t}
   {
   }
 
-  template<typename S, typename V>
-  struct FindIndex
+  template<typename C>
+  operator Slice<Slice<BType, Condition>, C>()
   {
-  };
+    return {base_data};
+  }
 
-  template<typename S, typename... ETs>
-  struct FindIndex<S, std::tuple<ETs...>>
+  constexpr std::size_t Size() { return kArraySize; }
+
+  template<typename C>
+  auto Get()
   {
-    constexpr static std::size_t value =
-        FindElement<S, typename std::remove_reference_t<ETs>::MarkerTypes...>::
-            value;
-  };
+    return Slice<Slice<BType, Condition>, C> {base_data};
+  }
 
-  template<typename... MTs>
+  template<typename C>
+  auto Get() const
+  {
+    return Slice<Slice<const BType, Condition>, C> {base_data};
+  }
+
+  template<std::size_t LocalIndex>
   auto& Get()
   {
-    std::ignore = CheckMarkerTypesForUniqueness<MTs...> {};
-    using SType = typename MergeMarkers<MTs...>::MarkerTypes;
-    return std::get<FindIndex<SType, DType>::value>(this->data);
+    constexpr std::size_t kGlobalIndex =
+        std::get<LocalIndex>(kUsedElementsArray);
+    return std::get<kGlobalIndex>(base_data);
   }
 
-  template<typename... MTs>
-  const auto& Get() const
+  template<std::size_t LocalIndex>
+  auto& Get() const
   {
-    std::ignore = CheckMarkerTypesForUniqueness<MTs...> {};
-    using SType = typename MergeMarkers<MTs...>::MarkerTypes;
-    return std::get<FindIndex<SType, DType>::value>(this->data);
+    constexpr std::size_t kGlobalIndex =
+        std::get<LocalIndex>(kUsedElementsArray);
+    return std::get<kGlobalIndex>(base_data);
   }
 
-  auto& GetSingle()
+  auto& Single()
   {
-    static_assert(1 == std::tuple_size<DType>::value,
-                  "There is more than 1 value");
-    return std::get<0>(data);
+    static_assert(1 == kArraySize, "There is more than 1 value");
+    return Get<0>();
   }
 
-  const auto& GetSingle() const
+  const auto& Single() const
   {
-    static_assert(1 == std::tuple_size<DType>::value,
-                  "There is more than 1 value");
-    return std::get<0>(data);
+    static_assert(1 == kArraySize, "There is more than 1 value");
+    return Get<0>();
   }
 
-  template<typename... MTs>
-  auto ShrinkTo()
-  {
-    return Slice<DType, MTs...>::Create(this->data);
-  }
+private:
+  constexpr static std::size_t kArraySize {
+      CountTypesInsideTupleByCondition<DType, Cond>::value};
+  constexpr static std::array<std::size_t, kArraySize> kUsedElementsArray {
+      MakeArray<DType, Condition, kArraySize>()};
 
-  DType data;
+  DType& base_data;
 };
 
 #endif  // CITIDI_INCLUDE_SLICE_HPP
