@@ -2,6 +2,7 @@
 #include <iostream>
 #include <thread>
 
+#include "include/condition.hpp"
 #include "include/dispatcher.hpp"
 #include "include/element.hpp"
 #include "include/slice.hpp"
@@ -70,33 +71,31 @@ constexpr static std::size_t k1000ms {1000U};
 template<typename SensorType, typename SignalType, typename T>
 struct ReadSignal
 {
-  void operator()(Slice<typename T::DType, SensorType, SignalType> disp)
+  void operator()(Slice<T, With<SensorType, SignalType>> slice)
   {
-    disp.GetSingle().data.value++;
+    slice.Single().data.value++;
   }
 };
 
 template<typename SensorType, typename T>
 struct WriteHealth
 {
-  void operator()(Slice<typename T::DType, SensorType> disp)
+  void operator()(Slice<T, With<SensorType>> disp)
   {
     const std::size_t result =
-        disp.template Get<SensorType, Calibration>().data.value
-        + disp.template Get<SensorType, Objects>().data.value;
-    disp.template Get<SensorType, Health>().data.value = result;
+        disp.template Get<With<SensorType, Calibration>>().Single().data.value
+        + disp.template Get<With<SensorType, Objects>>().Single().data.value;
+    disp.template Get<With<SensorType, Health>>().Single().data.value = result;
   }
 };
 
 template<typename SensorType, typename SignalType, typename T>
 struct PrintSignalValue
 {
-  void operator()(const Slice<typename T::DType, SensorType, SignalType>& disp)
+  void operator()(const Slice<T, With<SensorType, SignalType>>& slice)
   {
     std::cout << "Sensor<" << SensorType::id << "> [" << SignalType::Name()
-              << "] value: "
-              << disp.template Get<SensorType, SignalType>().data.value
-              << std::endl;
+              << "] value: " << slice.Single().data.value << std::endl;
   }
 };
 
@@ -127,14 +126,14 @@ void for_(F func)
 template<typename CTime, typename T, typename... Args>
 struct ApplicationProcess
 {
-  void operator()(Slice<typename T::DType, CTime> tasks, Args&... args)
+  static void Run(Slice<T, With<CTime>> tasks, Args&... args)
   {
     while (true) {
-      detail::for_<std::tuple_size<decltype(tasks.data)>::value>(
-          [&tasks, &args...](auto i)
+      detail::for_<tasks.Size()>(
+          [&tasks, &args...](const auto i)
           {
-            auto& task = std::get<i.value>(tasks.data);
-            task.data(args...);
+            auto& task = tasks.template Get<i.value>().data;
+            task(args...);
           });
       std::this_thread::sleep_for(std::chrono::milliseconds {CTime::ValueMs()});
     }
@@ -177,29 +176,35 @@ int main()
   DataDispatcher disp {};
   ApplicationDispatcher app {};
 
-  std::thread thread_40ms {ApplicationProcess<CycleTime<k40ms>,
-                                              ApplicationDispatcher,
-                                              DataDispatcher> {},
-                           app,
-                           std::ref(disp)};
-
-  std::thread thread_80ms {ApplicationProcess<CycleTime<k80ms>,
-                                              ApplicationDispatcher,
-                                              DataDispatcher> {},
-                           app,
-                           std::ref(disp)};
-
-  std::thread thread_250ms {ApplicationProcess<CycleTime<k250ms>,
-                                               ApplicationDispatcher,
-                                               DataDispatcher> {},
-                            app,
-                            std::ref(disp)};
-
-  std::thread thread_1000ms {ApplicationProcess<CycleTime<k1000ms>,
+  std::thread thread_40ms {[&app, &disp]() -> void
+                           {
+                             ApplicationProcess<CycleTime<k40ms>,
                                                 ApplicationDispatcher,
-                                                DataDispatcher> {},
-                             app,
-                             std::ref(disp)};
+                                                DataDispatcher>::Run(app, disp);
+                           }};
+
+  std::thread thread_80ms {[&app, &disp]() -> void
+                           {
+                             ApplicationProcess<CycleTime<k80ms>,
+                                                ApplicationDispatcher,
+                                                DataDispatcher>::Run(app, disp);
+                           }};
+
+  std::thread thread_250ms {[&app, &disp]() -> void
+                            {
+                              ApplicationProcess<CycleTime<k250ms>,
+                                                 ApplicationDispatcher,
+                                                 DataDispatcher>::Run(app,
+                                                                      disp);
+                            }};
+
+  std::thread thread_1000ms {[&app, &disp]() -> void
+                             {
+                               ApplicationProcess<CycleTime<k1000ms>,
+                                                  ApplicationDispatcher,
+                                                  DataDispatcher>::Run(app,
+                                                                       disp);
+                             }};
 
   while (true) {
     std::this_thread::yield();
