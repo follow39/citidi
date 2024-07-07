@@ -6,7 +6,7 @@
 template<typename DType, typename... MarkerTypes>
 struct Element
 {
-  using Check = CheckMarkerTypesForUniqueness<MarkerTypes...>;
+  using Check = IsSomeTypeIsDuplicatedAssertion<MarkerTypes...>;
   using DataType = DType;
   using MarkerTypesTupleType = std::tuple<MarkerTypes...>;
 
