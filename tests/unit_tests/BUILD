@@ -7,6 +7,6 @@ cc_test(
     ],
     deps = [
         "//include:lib",
-        "@gtest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
