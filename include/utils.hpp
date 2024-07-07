@@ -118,6 +118,12 @@ struct FindRepeatedTypes
     constexpr static bool value = FindRepeatedTypesImpl<I + 1, 0, S>::value;
   };
 
+  template<std::size_t I, std::size_t S>
+  struct FindRepeatedTypesImpl<I, I, S>
+  {
+    constexpr static bool value = FindRepeatedTypesImpl<I, I + 1, S>::value;
+  };
+
   template<std::size_t J, std::size_t S>
   struct FindRepeatedTypesImpl<S, J, S>
   {

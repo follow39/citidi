@@ -95,15 +95,15 @@ TEST(CountTheSameTypesInUnorderedTuples, SimpleTest)
 TEST(FindRepeatedTypes, SimpleTest)
 {
   {
-    const bool actual_value = FindRepeatedTypes<int>::value;
+    const bool actual_value = IsSomeTypeDuplicated<int>::value;
     EXPECT_FALSE(actual_value);
   }
   {
-    const bool actual_value = FindRepeatedTypes<int, char, double>::value;
+    const bool actual_value = IsSomeTypeDuplicated<int, char, double>::value;
     EXPECT_FALSE(actual_value);
   }
   {
-    const bool actual_value = FindRepeatedTypes<int, char, int, double>::value;
+    const bool actual_value = IsSomeTypeDuplicated<int, char, int, double>::value;
     EXPECT_TRUE(actual_value);
   }
 }
