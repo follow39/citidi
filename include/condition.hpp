@@ -80,7 +80,7 @@ struct Not
 template<typename... MarkerTypes>
 struct With
 {
-  using Check = CheckMarkerTypesForUniqueness<MarkerTypes...>;
+  using Check = IsSomeTypeIsDuplicatedAssertion<MarkerTypes...>;
 
   template<typename T1, typename T2>
   constexpr static bool EvaluateImpl()
@@ -99,7 +99,7 @@ struct With
 template<typename... MarkerTypes>
 struct WithExactly
 {
-  using Check = CheckMarkerTypesForUniqueness<MarkerTypes...>;
+  using Check = IsSomeTypeIsDuplicatedAssertion<MarkerTypes...>;
 
   template<typename T1, typename T2>
   constexpr static bool EvaluateImpl()
@@ -120,7 +120,7 @@ struct WithExactly
 template<typename... MarkerTypes>
 struct Without
 {
-  using Check = CheckMarkerTypesForUniqueness<MarkerTypes...>;
+  using Check = IsSomeTypeIsDuplicatedAssertion<MarkerTypes...>;
 
   template<typename MarkersTupleType>
   constexpr static bool Evaluate()

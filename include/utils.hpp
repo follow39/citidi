@@ -98,40 +98,47 @@ struct CountTypesInsideTupleByCondition
 };
 
 template<typename... Types>
-struct FindRepeatedTypes
+struct IsSomeTypeDuplicated
 {
   using D = std::tuple<Types...>;
   constexpr static std::size_t s = std::tuple_size<D>();
 
   template<std::size_t I, std::size_t J, std::size_t S>
-  struct FindRepeatedTypesImpl
+  struct IsSomeTypeDuplicatedImpl
   {
     constexpr static bool value =
         std::is_same<std::tuple_element_t<I, D>,
                      std::tuple_element_t<J, D>>::value
-        || FindRepeatedTypesImpl<I, J + 1, S>::value;
+        || IsSomeTypeDuplicatedImpl<I, J + 1, S>::value;
   };
 
   template<std::size_t I, std::size_t S>
-  struct FindRepeatedTypesImpl<I, S, S>
+  struct IsSomeTypeDuplicatedImpl<I, S, S>
   {
-    constexpr static bool value = FindRepeatedTypesImpl<I + 1, 0, S>::value;
+    constexpr static bool value = IsSomeTypeDuplicatedImpl<I + 1, 0, S>::value;
+  };
+
+  template<std::size_t I, std::size_t S>
+  struct IsSomeTypeDuplicatedImpl<I, I, S>
+  {
+    constexpr static bool value = IsSomeTypeDuplicatedImpl<I, I + 1, S>::value;
   };
 
   template<std::size_t J, std::size_t S>
-  struct FindRepeatedTypesImpl<S, J, S>
+  struct IsSomeTypeDuplicatedImpl<S, J, S>
   {
     constexpr static bool value = false;
   };
 
-  constexpr static bool value = FindRepeatedTypesImpl<0, 0, s>::value;
+  constexpr static bool value = IsSomeTypeDuplicatedImpl<0, 0, s>::value;
 };
 
 template<typename... Ts>
-struct CheckMarkerTypesForUniqueness
+struct IsSomeTypeIsDuplicatedAssertion
 {
-  constexpr static bool is_uniq = !FindRepeatedTypes<Ts...>::value;
-  static_assert(!is_uniq, "Marker types should be unique");
+  constexpr static bool is_some_type_duplicated =
+      IsSomeTypeDuplicated<Ts...>::value;
+  static_assert(!is_some_type_duplicated, "Marker types should be unique");
 };
 
 #endif  // CITIDI_INCLUDE_UTILS_H
