@@ -1,10 +1,9 @@
-#include <tuple>
 #include <iostream>
+#include <tuple>
 
 #include "include/utils.hpp"
 
-int main()
-{
+int main() {
   std::ignore = IsSomeTypeIsDuplicatedAssertion<int, int>{};
 
   return 0;

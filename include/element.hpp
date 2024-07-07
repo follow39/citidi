@@ -3,9 +3,8 @@
 
 #include "include/utils.hpp"
 
-template<typename DType, typename... MarkerTypes>
-struct Element
-{
+template <typename DType, typename... MarkerTypes>
+struct Element {
   using Check = IsSomeTypeIsDuplicatedAssertion<MarkerTypes...>;
   using DataType = DType;
   using MarkerTypesTupleType = std::tuple<MarkerTypes...>;

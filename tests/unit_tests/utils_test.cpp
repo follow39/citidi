@@ -3,11 +3,9 @@
 #include "gtest/gtest.h"
 #include "include/condition.hpp"
 
-namespace
-{
+namespace {
 
-TEST(IsTypeInsidePack, SimpleTest)
-{
+TEST(IsTypeInsidePack, SimpleTest) {
   {
     const bool actual_value = IsTypeInsidePack<int, int>::value;
     EXPECT_TRUE(actual_value);
@@ -22,8 +20,7 @@ TEST(IsTypeInsidePack, SimpleTest)
   }
 }
 
-TEST(IsTypeInsideTuple, SimpleTest)
-{
+TEST(IsTypeInsideTuple, SimpleTest) {
   {
     const bool actual_value = IsTypeInsideTuple<int, std::tuple<int>>::value;
     EXPECT_TRUE(actual_value);
@@ -40,8 +37,7 @@ TEST(IsTypeInsideTuple, SimpleTest)
   }
 }
 
-TEST(CountTheSameTypesInUnorderedTuples, SimpleTest)
-{
+TEST(CountTheSameTypesInUnorderedTuples, SimpleTest) {
   {
     using Tuple1Type = std::tuple<double, int, char>;
     using Tuple2Type = std::tuple<double, int, char>;
@@ -92,8 +88,7 @@ TEST(CountTheSameTypesInUnorderedTuples, SimpleTest)
   }
 }
 
-TEST(FindRepeatedTypes, SimpleTest)
-{
+TEST(FindRepeatedTypes, SimpleTest) {
   {
     const bool actual_value = IsSomeTypeDuplicated<int>::value;
     EXPECT_FALSE(actual_value);
@@ -103,7 +98,8 @@ TEST(FindRepeatedTypes, SimpleTest)
     EXPECT_FALSE(actual_value);
   }
   {
-    const bool actual_value = IsSomeTypeDuplicated<int, char, int, double>::value;
+    const bool actual_value =
+        IsSomeTypeDuplicated<int, char, int, double>::value;
     EXPECT_TRUE(actual_value);
   }
 }

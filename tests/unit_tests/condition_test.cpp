@@ -2,11 +2,9 @@
 
 #include "gtest/gtest.h"
 
-namespace
-{
+namespace {
 
-TEST(BoolConst, EvaluateTest)
-{
+TEST(BoolConst, EvaluateTest) {
   {
     using Condition = BoolConst<true>;
     EXPECT_TRUE(Condition::Evaluate<void>());
@@ -17,8 +15,7 @@ TEST(BoolConst, EvaluateTest)
   }
 }
 
-TEST(Or, EvaluateTest)
-{
+TEST(Or, EvaluateTest) {
   {
     using Condition = Or<BoolConst<true>, BoolConst<true>>;
     EXPECT_TRUE(Condition::Evaluate<int>());
@@ -36,16 +33,13 @@ TEST(Or, EvaluateTest)
     EXPECT_FALSE(Condition::Evaluate<int>());
   }
   {
-    using Condition = Or<BoolConst<false>,
-                         BoolConst<false>,
-                         BoolConst<true>,
+    using Condition = Or<BoolConst<false>, BoolConst<false>, BoolConst<true>,
                          BoolConst<false>>;
     EXPECT_TRUE(Condition::Evaluate<int>());
   }
 }
 
-TEST(And, EvaluateTest)
-{
+TEST(And, EvaluateTest) {
   {
     using Condition = And<BoolConst<true>, BoolConst<true>>;
     EXPECT_TRUE(Condition::Evaluate<int>());
@@ -63,16 +57,13 @@ TEST(And, EvaluateTest)
     EXPECT_FALSE(Condition::Evaluate<int>());
   }
   {
-    using Condition = And<BoolConst<true>,
-                          BoolConst<true>,
-                          BoolConst<false>,
+    using Condition = And<BoolConst<true>, BoolConst<true>, BoolConst<false>,
                           BoolConst<true>>;
     EXPECT_FALSE(Condition::Evaluate<int>());
   }
 }
 
-TEST(Not, EvaluateTest)
-{
+TEST(Not, EvaluateTest) {
   {
     using Condition = Not<BoolConst<true>>;
     EXPECT_FALSE(Condition::Evaluate<void>());
@@ -83,8 +74,7 @@ TEST(Not, EvaluateTest)
   }
 }
 
-TEST(With, EvaluateTest)
-{
+TEST(With, EvaluateTest) {
   using TestTuple = std::tuple<int, float>;
   {
     using Condition = With<int>;
@@ -113,8 +103,7 @@ TEST(With, EvaluateTest)
   }
 }
 
-TEST(WithExactly, EvaluateTest)
-{
+TEST(WithExactly, EvaluateTest) {
   using TestTuple = std::tuple<int, float>;
   {
     using Condition = WithExactly<int>;
@@ -143,8 +132,7 @@ TEST(WithExactly, EvaluateTest)
   }
 }
 
-TEST(Without, EvaluateTest)
-{
+TEST(Without, EvaluateTest) {
   using TestTuple = std::tuple<int, float>;
   {
     using Condition = Without<int>;
@@ -173,8 +161,7 @@ TEST(Without, EvaluateTest)
   }
 }
 
-TEST(ComplexCondition, Test)
-{
+TEST(ComplexCondition, Test) {
   using ConditionType =
       Or<With<int>, With<float>, And<With<bool>, Without<char, double>>>;
 

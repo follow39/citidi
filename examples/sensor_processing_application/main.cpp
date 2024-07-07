@@ -7,135 +7,111 @@
 #include "include/element.hpp"
 #include "include/slice.hpp"
 
-struct LidarObjectsData
-{
-  std::size_t value {0U};
+struct LidarObjectsData {
+  std::size_t value{0U};
 };
 
-struct LidarCalibrationData
-{
-  std::size_t value {0U};
+struct LidarCalibrationData {
+  std::size_t value{0U};
 };
 
-struct UltrasoundObjectsData
-{
-  std::size_t value {0U};
+struct UltrasoundObjectsData {
+  std::size_t value{0U};
 };
 
-struct UltrasoundCalibrationData
-{
-  std::size_t value {0U};
+struct UltrasoundCalibrationData {
+  std::size_t value{0U};
 };
 
-struct HealthData
-{
-  std::size_t value {0U};
+struct HealthData {
+  std::size_t value{0U};
 };
 
-template<std::size_t Id>
-struct Sensor
-{
+template <std::size_t Id>
+struct Sensor {
   constexpr static std::size_t id = Id;
 };
 
-struct Health
-{
+struct Health {
   constexpr static const char* Name() { return "Health"; }
 };
 
-struct Calibration
-{
+struct Calibration {
   constexpr static const char* Name() { return "Calibration"; }
 };
 
-struct Objects
-{
+struct Objects {
   constexpr static const char* Name() { return "Objects"; }
 };
 
-constexpr static std::size_t kLidarId {0U};
-constexpr static std::size_t kUltrasoundId {1U};
+constexpr static std::size_t kLidarId{0U};
+constexpr static std::size_t kUltrasoundId{1U};
 
-template<std::size_t CycleTimeValueMs>
-struct CycleTime
-{
+template <std::size_t CycleTimeValueMs>
+struct CycleTime {
   constexpr static std::size_t value_ms = CycleTimeValueMs;
   constexpr static std::size_t ValueMs() { return value_ms; }
 };
 
-constexpr static std::size_t k40ms {40U};
-constexpr static std::size_t k80ms {80U};
-constexpr static std::size_t k250ms {250U};
-constexpr static std::size_t k1000ms {1000U};
+constexpr static std::size_t k40ms{40U};
+constexpr static std::size_t k80ms{80U};
+constexpr static std::size_t k250ms{250U};
+constexpr static std::size_t k1000ms{1000U};
 
-template<typename SensorType, typename SignalType, typename T>
-struct ReadSignal
-{
-  void operator()(Slice<T, With<SensorType, SignalType>> slice)
-  {
+template <typename SensorType, typename SignalType, typename T>
+struct ReadSignal {
+  void operator()(Slice<T, With<SensorType, SignalType>> slice) {
     slice.Single().data.value++;
   }
 };
 
-template<typename SensorType, typename T>
-struct WriteHealth
-{
-  void operator()(Slice<T, With<SensorType>> disp)
-  {
+template <typename SensorType, typename T>
+struct WriteHealth {
+  void operator()(Slice<T, With<SensorType>> disp) {
     const std::size_t result =
-        disp.template Get<With<SensorType, Calibration>>().Single().data.value
-        + disp.template Get<With<SensorType, Objects>>().Single().data.value;
+        disp.template Get<With<SensorType, Calibration>>().Single().data.value +
+        disp.template Get<With<SensorType, Objects>>().Single().data.value;
     disp.template Get<With<SensorType, Health>>().Single().data.value = result;
   }
 };
 
-template<typename SensorType, typename SignalType, typename T>
-struct PrintSignalValue
-{
-  void operator()(const Slice<T, With<SensorType, SignalType>>& slice)
-  {
+template <typename SensorType, typename SignalType, typename T>
+struct PrintSignalValue {
+  void operator()(const Slice<T, With<SensorType, SignalType>>& slice) {
     std::cout << "Sensor<" << SensorType::id << "> [" << SignalType::Name()
               << "] value: " << slice.Single().data.value << std::endl;
   }
 };
 
-namespace detail
-{
+namespace detail {
 
-template<std::size_t N>
-struct Number
-{
+template <std::size_t N>
+struct Number {
   static const constexpr auto value = N;
 };
 
-template<class F, std::size_t... Is>
-void for_(F func, std::index_sequence<Is...>)
-{
+template <class F, std::size_t... Is>
+void for_(F func, std::index_sequence<Is...>) {
   using expander = int[];
-  (void)expander {0, ((void)func(Number<Is> {}), 0)...};
+  (void)expander{0, ((void)func(Number<Is>{}), 0)...};
 }
 
-template<std::size_t N, typename F>
-void for_(F func)
-{
+template <std::size_t N, typename F>
+void for_(F func) {
   for_(func, std::make_index_sequence<N>());
 }
 
 }  // namespace detail
 
-template<typename CTime, typename T, typename... Args>
-struct ApplicationProcess
-{
-  static void Run(Slice<T, With<CTime>> tasks, Args&... args)
-  {
+template <typename CTime, typename T, typename... Args>
+struct ApplicationProcess {
+  static void Run(Slice<T, With<CTime>> tasks, Args&... args) {
     while (true) {
-      detail::for_<tasks.Size()>(
-          [&tasks, &args...](const auto i)
-          {
-            auto& task = tasks.template Get<i.value>().data;
-            task(args...);
-          });
-      std::this_thread::sleep_for(std::chrono::milliseconds {CTime::ValueMs()});
+      detail::for_<tasks.Size()>([&tasks, &args...](const auto i) {
+        auto& task = tasks.template Get<i.value>().data;
+        task(args...);
+      });
+      std::this_thread::sleep_for(std::chrono::milliseconds{CTime::ValueMs()});
     }
   }
 };
@@ -171,40 +147,29 @@ using ApplicationDispatcher = Dispatcher<
     Element<PrintSignalValue<Sensor<kUltrasoundId>, Health, DataDispatcher>,
             CycleTime<k1000ms>>>;
 
-int main()
-{
-  DataDispatcher disp {};
-  ApplicationDispatcher app {};
+int main() {
+  DataDispatcher disp{};
+  ApplicationDispatcher app{};
 
-  std::thread thread_40ms {[&app, &disp]() -> void
-                           {
-                             ApplicationProcess<CycleTime<k40ms>,
-                                                ApplicationDispatcher,
-                                                DataDispatcher>::Run(app, disp);
-                           }};
+  std::thread thread_40ms{[&app, &disp]() -> void {
+    ApplicationProcess<CycleTime<k40ms>, ApplicationDispatcher,
+                       DataDispatcher>::Run(app, disp);
+  }};
 
-  std::thread thread_80ms {[&app, &disp]() -> void
-                           {
-                             ApplicationProcess<CycleTime<k80ms>,
-                                                ApplicationDispatcher,
-                                                DataDispatcher>::Run(app, disp);
-                           }};
+  std::thread thread_80ms{[&app, &disp]() -> void {
+    ApplicationProcess<CycleTime<k80ms>, ApplicationDispatcher,
+                       DataDispatcher>::Run(app, disp);
+  }};
 
-  std::thread thread_250ms {[&app, &disp]() -> void
-                            {
-                              ApplicationProcess<CycleTime<k250ms>,
-                                                 ApplicationDispatcher,
-                                                 DataDispatcher>::Run(app,
-                                                                      disp);
-                            }};
+  std::thread thread_250ms{[&app, &disp]() -> void {
+    ApplicationProcess<CycleTime<k250ms>, ApplicationDispatcher,
+                       DataDispatcher>::Run(app, disp);
+  }};
 
-  std::thread thread_1000ms {[&app, &disp]() -> void
-                             {
-                               ApplicationProcess<CycleTime<k1000ms>,
-                                                  ApplicationDispatcher,
-                                                  DataDispatcher>::Run(app,
-                                                                       disp);
-                             }};
+  std::thread thread_1000ms{[&app, &disp]() -> void {
+    ApplicationProcess<CycleTime<k1000ms>, ApplicationDispatcher,
+                       DataDispatcher>::Run(app, disp);
+  }};
 
   while (true) {
     std::this_thread::yield();

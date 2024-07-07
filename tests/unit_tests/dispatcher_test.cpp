@@ -1,20 +1,17 @@
 #include "include/dispatcher.hpp"
+
+#include "gtest/gtest.h"
 #include "include/condition.hpp"
 #include "include/element.hpp"
 #include "include/slice.hpp"
 
-#include "gtest/gtest.h"
+namespace {
 
-namespace
-{
-
-using DD = Dispatcher<Element<int, char, int>,
-                      Element<int, int>,
+using DD = Dispatcher<Element<int, char, int>, Element<int, int>,
                       Element<double, double>>;
 
-TEST(Dispatcher, SimpleTest)
-{
-  DD disp {};
+TEST(Dispatcher, SimpleTest) {
+  DD disp{};
 
   auto& a = disp.Get<And<WithExactly<int>>>().Single();
   a.data = 123;
@@ -28,32 +25,28 @@ TEST(Dispatcher, SimpleTest)
   EXPECT_EQ('A', c.data);
 }
 
-template<typename T>
-void TestCoercionInt(Slice<T, With<int>> s)
-{
+template <typename T>
+void TestCoercionInt(Slice<T, With<int>> s) {
   EXPECT_EQ(s.template Get<With<char>>().Single().data, 7);
   EXPECT_EQ(s.template Get<0>().data, 7);
   EXPECT_EQ(s.template Get<WithExactly<int>>().Single().data, 13);
   EXPECT_EQ(s.template Get<1>().data, 13);
 }
 
-template<typename T>
-void TestCoercionChar(Slice<T, With<char>> s)
-{
+template <typename T>
+void TestCoercionChar(Slice<T, With<char>> s) {
   EXPECT_EQ(s.template Get<0>().data, 7);
   EXPECT_EQ(s.Single().data, 7);
 }
 
-template<typename T>
-void TestCoercionDouble(const Slice<T, WithExactly<double>>& s)
-{
+template <typename T>
+void TestCoercionDouble(const Slice<T, WithExactly<double>>& s) {
   EXPECT_DOUBLE_EQ(s.template Get<0>().data, 12.34);
   EXPECT_DOUBLE_EQ(s.Single().data, 12.34);
 }
 
-TEST(Dispatcher, ImplicitCoercionSliceTest)
-{
-  DD disp {};
+TEST(Dispatcher, ImplicitCoercionSliceTest) {
+  DD disp{};
 
   disp.Get<With<char>>().Single().data = 7;
   disp.Get<WithExactly<int>>().Single().data = 13;
