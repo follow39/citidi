@@ -1,5 +1,26 @@
 # Enable Bzlmod for every Bazel command
 common --enable_bzlmod
+common --enable_platform_specific_config
+
+build:linux --sandbox_add_mount_pair=/tmp
+build:macos --sandbox_add_mount_pair=/var/tmp
+build:windows --sandbox_add_mount_pair=C:\Temp
+
+build --incompatible_disallow_empty_glob
+build --verbose_failures
+build --worker_sandboxing
+build --experimental_output_directory_naming_scheme=diff_against_dynamic_baseline
+build --action_env BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+
+test --sandbox_default_allow_network=false
+test --test_output=errors
+
+# build:darwin_arm64 --platforms @zig_sdk//platform:darwin_arm64
+# build:darwin_arm64 --extra_toolchains @zig_sdk//toolchain:darwin_arm64
+
+# build:darwin_amd64 --platforms @zig_sdk//platform:darwin_amd64
+# build:darwin_amd64 --extra_toolchains @zig_sdk//toolchain:darwin_amd64
+
 build --cxxopt='-std=c++14'
 build --cxxopt='-fno-rtti'
 build --cxxopt='-Wpedantic'
